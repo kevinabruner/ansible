@@ -1,0 +1,6 @@
+- name: Managing Ubuntu Hosts
+  gather_facts: yes      # Gather system facts about the hosts
+  hosts: ubuntu          # This matches [ubuntu] in production/hosts
+  become: yes            # Become SUDO
+  roles:
+    - common
