@@ -43,7 +43,7 @@ for vm in vms["results"]:
         if vm['status']['value'] == 'active':                        
             #adds a line for each VM as a sub-module in the main module's configuration file             
             hostNameLine = "    " + vm["name"] + ":"
-            hostIpLine = "      " + vm["primary_ip4"]["address"].split("/")[0] 
+            hostIpLine = "      ansible host: " + vm["primary_ip4"]["address"].split("/")[0] 
             with open(gitDir + '/inventory.yaml', 'a') as file:
                 file.write(hostNameLine + '\n')   
                 file.write(hostIpLine + '\n')   
