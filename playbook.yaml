@@ -2,7 +2,7 @@
   hosts: myhosts
   tasks:
     - name: Clone github repo
-        ansible.builtin.git:
-          repo: "https://github.com/kevinabruner/{{ hostvars[inventory_hostname]['repo'] }}"
-          dest: /home/kevin/gitpull
-          update: yes
+      ansible.builtin.git:
+        repo: "https://github.com/kevinabruner/{{ hostvars[inventory_hostname]['repo'] }}"
+        dest: /home/kevin/gitpull
+        update: yes
