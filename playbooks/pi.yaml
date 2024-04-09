@@ -1,7 +1,7 @@
 - name: Working with the pi repo for piholes
   hosts: pi
+  
   tasks:
     - name: testing the repo
       ansible.builtin.debug:
-      msg: This one {{ inventory_hostname }} 
-        
+      msg: This one {{ inventory_hostname }}         
