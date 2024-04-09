@@ -66,12 +66,11 @@ shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
 #iterates through the vms 
 for vm in vms["results"]:    
     if vm["primary_ip4"] and vm["custom_fields"]['VMorContainer'][0] == "vm":                                                   
-                                                                                   
-        if vm['status']['value'] == 'active':
-                        
+                                                                             
+        if vm['status']['value'] == 'active':                        
             #adds a line for each VM as a sub-module in the main module's configuration file             
             hostNameLine = "    " + vm["name"] + ":"
-            hostIpLine = "      " + vm["primary_ip4"]["address"] + ":"
+            hostIpLine = "      " + vm["primary_ip4"]["address"].split("/")[0] + ":"
             with open(gitDir + '/inventory.yaml', 'a') as file:
                 file.write("\n" + hostNameLine + '\n')   
                 file.write(hostIpLine + '\n')   
