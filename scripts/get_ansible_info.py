@@ -52,7 +52,7 @@ for repo in repos:
     for vm in vms["results"]:    
         indent_level = 2
         if vm["custom_fields"]['VMorContainer'][0] == "vm":
-            if vm['custom_fields']['repose'] == repo:     
+            if vm['custom_fields']['repos'] == repo:     
                 hostNameLine = "    " + vm["name"] + ":"
                 hostIpLine = "      ansible host: " + vm["primary_ip4"]["address"].split("/")[0]             
                 with open(gitDir + '/inventory.yaml', 'a') as file:
