@@ -44,7 +44,7 @@ for vm in vms["results"]:
             #adds a line for each VM as a sub-module in the main module's configuration file             
             hostNameLine = "    " + vm["name"] + ":"
             hostIpLine = "      ansible host: " + vm["primary_ip4"]["address"].split("/")[0] 
-            gitLine = "        repo: " + "\"" + vm["custom_fields"]["gh_repo"] + "\""
+            gitLine = "        repo: " + "\"" + str(vm["custom_fields"]["gh_repo"]) + "\""
             with open(gitDir + '/inventory.yaml', 'a') as file:
                 file.write(hostNameLine + '\n')   
                 file.write(hostIpLine + '\n')   
