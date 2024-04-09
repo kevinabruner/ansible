@@ -61,7 +61,7 @@ truncate_file_after_marker(gitDir + '/main.tf', 'hosts:')
 #gets a json object of all the vms
 vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
 
-#iterates through the vms
+#iterates through the vms 
 for vm in vms["results"]:    
     if vm["primary_ip4"] and vm["custom_fields"]['VMorContainer'][0] == "vm":                                                   
                                                                                    
