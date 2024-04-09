@@ -35,8 +35,8 @@ gitDir="/home/kevin/ansible"
 vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
 
 #gets a list of all the repos/projects
-repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
 repos_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=3")
+repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
 
 
 shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
