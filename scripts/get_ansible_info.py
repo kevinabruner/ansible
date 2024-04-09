@@ -45,7 +45,7 @@ for vm in vms["results"]:
             hostNameLine = "    " + vm["name"] + ":"
             hostIpLine = "      " + vm["primary_ip4"]["address"].split("/")[0] 
             with open(gitDir + '/inventory.yaml', 'a') as file:
-                file.write("\n" + hostNameLine + '\n')   
+                file.write(hostNameLine + '\n')   
                 file.write(hostIpLine + '\n')   
             
                 
