@@ -48,6 +48,7 @@ for vm in vms["results"]:
             with open(gitDir + '/inventory.yaml', 'a') as file:
                 file.write(hostNameLine + '\n')   
                 file.write(hostIpLine + '\n')   
+                file.write(gitLine + '\n')   
             
                 
                         
