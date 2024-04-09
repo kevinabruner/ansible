@@ -1,7 +1,9 @@
-- name: Working with the pi repo for piholes
+- name: My first play
   hosts: myhosts
-
   tasks:
-  - name: Print debug message
-    debug:
-      msg: Hello, world! 
+   - name: Ping my hosts
+     ansible.builtin.ping:
+
+   - name: Print message
+     ansible.builtin.debug:
+      msg: Hello world
