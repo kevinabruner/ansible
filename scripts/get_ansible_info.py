@@ -61,7 +61,7 @@ for repo in repos:
             vm['status']['value'] == 'active'
         ):            
                 hostNameLine = indent(indent_level) + vm["name"] + ":"
-                hostIpLine = indent(indent_level) + "ansible host: " + vm["primary_ip4"]["address"].split("/")[0]             
+                hostIpLine = indent(indent_level + 1) + "ansible host: " + vm["primary_ip4"]["address"].split("/")[0]             
 
                 with open(gitDir + '/inventory.yaml', 'a') as file:
                     file.write(hostNameLine + '\n')   
