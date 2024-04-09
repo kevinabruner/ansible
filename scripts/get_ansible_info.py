@@ -34,21 +34,27 @@ gitDir="/home/kevin/ansible"
 #gets a json object of all the vms
 vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
 
+repos_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=3")
+
+repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
+
+print(repos)
+
+
+
+
 shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
 
 #iterates through the vms 
 for vm in vms["results"]:    
-    if vm["primary_ip4"] and vm["custom_fields"]['VMorContainer'][0] == "vm":                                                   
-                                                                             
+    if vm["primary_ip4"] and vm["custom_fields"]['VMorContainer'][0] == "vm":
         if vm['status']['value'] == 'active':                        
             #adds a line for each VM as a sub-module in the main module's configuration file             
             hostNameLine = "    " + vm["name"] + ":"
-            hostIpLine = "      ansible host: " + vm["primary_ip4"]["address"].split("/")[0] 
-            gitLine = "      repo: " + "\"" + str(vm["custom_fields"]["gh_repo"]) + "\""
+            hostIpLine = "      ansible host: " + vm["primary_ip4"]["address"].split("/")[0]             
             with open(gitDir + '/inventory.yaml', 'a') as file:
                 file.write(hostNameLine + '\n')   
-                file.write(hostIpLine + '\n')   
-                file.write(gitLine + '\n')   
+                file.write(hostIpLine + '\n')                   
             
                 
                         
