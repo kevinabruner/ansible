@@ -3,32 +3,6 @@ import os
 import shutil
 import requests
 
-
-def truncate_file_after_marker(file_path, marker):
-    try:
-        with open(file_path, 'r+') as file:
-            lines = file.readlines()
-            marker_index = -1
-
-            # Find the marker line
-            for i, line in enumerate(lines):
-                if marker in line:
-                    marker_index = i
-                    break
-
-            # If the marker line is found, truncate the file after that line
-            if marker_index != -1:
-                file.seek(0)
-                file.truncate()
-                file.writelines(lines[:marker_index+1])
-
-        print(f"File '{file_path}' truncated after marker line '{marker}'")
-    except FileNotFoundError:
-        print(f"File '{file_path}' not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-
 def replace_text_in_file(file_path, old_text, new_text):
     # Read the content of the file
     with open(file_path, 'r') as file:
@@ -56,7 +30,6 @@ def et_phone_home(url):
 
 #define the terraform directory and empty the terraform configuration file
 gitDir="/home/kevin/ansible"
-truncate_file_after_marker(gitDir + '/main.tf', 'hosts:')
 
 #gets a json object of all the vms
 vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
