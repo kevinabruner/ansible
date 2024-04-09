@@ -1,5 +1,0 @@
-
-- name: Updating APT Distribution 
-  apt:
-    update_cache: yes
-    upgrade: dist
