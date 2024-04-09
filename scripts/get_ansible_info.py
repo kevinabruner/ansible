@@ -17,7 +17,7 @@ def replace_text_in_file(file_path, old_text, new_text):
 
 def indent(indent_level):
     indent_spaces = 2
-    return 
+    return (" " * indent_level * indent_spaces)
 
 def et_phone_home(url):
     # Set your token
