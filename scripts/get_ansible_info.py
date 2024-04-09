@@ -61,17 +61,19 @@ truncate_file_after_marker(gitDir + '/main.tf', 'hosts:')
 #gets a json object of all the vms
 vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
 
+shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
+
 #iterates through the vms 
 for vm in vms["results"]:    
     if vm["primary_ip4"] and vm["custom_fields"]['VMorContainer'][0] == "vm":                                                   
                                                                                    
         if vm['status']['value'] == 'active':
-            
+                        
             #adds a line for each VM as a sub-module in the main module's configuration file             
             hostNameLine = "    " + vm["name"] + ":"
             hostIpLine = "      " + vm["primary_ip4"]["address"] + ":"
             with open(gitDir + '/inventory.yaml', 'a') as file:
-                file.write(hostNameLine + '\n')   
+                file.write("\n" + hostNameLine + '\n')   
                 file.write(hostIpLine + '\n')   
             
                 
