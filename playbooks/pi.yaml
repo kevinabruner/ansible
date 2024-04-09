@@ -2,6 +2,6 @@
   hosts: pi
 
   tasks:
-    - name: test
-      ansible.builtin.debug:
-      msg: This one {{ inventory_hostname }}         
+  - name: Print debug message
+      debug:
+        msg: Hello, world! 
