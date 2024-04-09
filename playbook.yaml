@@ -2,7 +2,7 @@
   hosts: myhosts
   tasks:
     - name: Print repo variable
-      ansible.builtin.debug:
-        msg: "Repo variable for {{ inventory_hostname }} is {{ repo }}"
-      vars:
-        repo: "{{ hostvars[inventory_hostname]['repo'] }}"
+            ansible.builtin.git:
+        repo: "https://github.com/kevinabruner/{{ hostvars[inventory_hostname]['repo'] }}"
+        dest: /home/kevin/gitpull
+        update: yes
