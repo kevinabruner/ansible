@@ -1,5 +1,5 @@
 - name: Working with the pi repo for piholes
-  hosts: pi
+  hosts: myhosts
 
   tasks:
   - name: Print debug message
