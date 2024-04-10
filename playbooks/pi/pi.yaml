@@ -71,4 +71,18 @@
         update_cache: yes
       become: true
 
+    - name: Create the pihole directory
+      ansible.builtin.file:
+        path: /etc/pihole
+        state: directory
+        mode: '0755'
+      become: true
 
+    - name: Chown the pihole
+      ansible.builtin.file:
+        path: /etc/pihole
+        state: directory
+        recurse: yes
+        owner: pihole
+        group: pihole
+      become: true
