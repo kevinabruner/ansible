@@ -53,12 +53,17 @@
       failed_when: task_log.status != 422 and task_log.status != 201
 
 
+    - name: Check if the directory exists and is empty
+      stat:
+        path: "/home/kevin/pi"
+      register: dir_stat
+
     - name: Clone the repository if the directory doesn't exist or is empty
       git:
         repo: "git@github.com:kevinabruner/pi.git"
         dest: "/home/kevin/pi"
         clone: yes
-      when: git_clone is failed or git_clone.stderr.find('already exists and is not an empty directory') == -1
+      when: dir_stat.stat.exists == false or dir_stat.stat.isdir == false or dir_stat.stat.size == 0
 
     - name: Update package cache
       apt:
