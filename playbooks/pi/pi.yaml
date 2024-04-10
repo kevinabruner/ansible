@@ -5,7 +5,7 @@
   tasks:    
     - name: debug
       ansible.builtin.debug:
-        msg: "The value of my_variable is {{ my_variable }}"
+        msg: "The value of pivars.KEY_PATH is {{ pivars.KEY_PATH }}"
     
     - name: Check if SSH key is already present
       stat:
