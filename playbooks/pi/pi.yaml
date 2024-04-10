@@ -57,4 +57,4 @@
 
     - name: Clone the repository
       shell: |        
-        GIT_SSH_COMMAND="ssh -i /home/kevin/.ssh/id_rsa.pub -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/home/kevin/.ssh/known_hosts" git clone git@github.com:kevinabruner/pi.git /home/kevin/pi
+        GIT_SSH_COMMAND="ssh -i /home/kevin/.ssh/id_rsa.pub -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/home/kevin/.ssh/known_hosts git clone git@github.com:kevinabruner/pi.git /home/kevin/pi"
