@@ -85,5 +85,14 @@
         dest: /etc/pihole/
       become: true
 
-    - name: run pihole installation
-      ansible.builtin.command: curl -sSL https://install.pi-hole.net | sudo bash /dev/stdin --unattended
+    - name: Download Pi-hole installation script
+      ansible.builtin.get_url:
+        url: "https://install.pi-hole.net"
+        dest: "/tmp/pihole_install.sh"
+        mode: "0755"
+      become: true
+
+    - name: Run Pi-hole installation script
+      ansible.builtin.command: "/tmp/pihole_install.sh --unattended"
+      become: true
+
