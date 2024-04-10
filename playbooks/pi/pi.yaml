@@ -2,22 +2,19 @@
   hosts: pi
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
-  tasks:    
-    - name: debug
-      ansible.builtin.debug:
-        msg: "The value of pivars.KEY_PATH is {{ pivars.KEY_PATH }}"
+  tasks:        
     
     - name: Check if SSH key is already present
       stat:
-        path: "{{ pivars.KEY_PATH }}"
+        path: "{{ pivars.pub_key_path }}"
       register: key_stat_result
 
     - name: Generate SSH key for accessing GitHub
-      command: "ssh-keygen -t rsa -f {{ pivars.KEY_PATH }} -N ''"
+      command: "ssh-keygen -t rsa -f {{ pivars.priv_key_path }} -N ''"
       when: not key_stat_result.stat.exists
 
     - name: Get key content
-      command: "cat {{ pivars.KEY_PATH }}"
+      command: "cat {{ pivars.pub_key_path }}"
       register: key_content
 
     - name: Check if known_host exists
@@ -43,8 +40,7 @@
         method: POST
         body: 
           title: "{{ inventory_hostname }}"
-          key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIwS7Gk8JYlGWEUHlE0c/Cjdihy/t40+P/sLOLhR4DpOndfjtqBg2aZdkSntJWF+aUqepz8wxE+6Xwvf0IlQtImdB3GvjsDp7rkIg5+DD7AwtcralKnEQqgNDfUHVhzugdtZzDplesWgD0GBin57v4NSK78tiXlsz2KZuj9d08lO0qhkYNwsrAvvUKhW2VMRCKmvU0F6bu3Q2IHFJhN3rtozGO6lZrEBgU2dS/6YuxsO7iFS8WJuAuIMzZcDCrprTzR5d+UCiFOF4ECl14ZgiLM2WjNv9NSPv7Joea8HxqkUTTlZdcY7rHd+kKyhTburjlMwE4eg2VuZ7HzUf4lKB/TAXmnuCt3Tw9OMpEbxXwO/DfGkIznHInaHCF2vrL5rTpOeUgwVNPB0vbmxs9Cd+5s0/6+kh/zdSdmNYkRIsfCFAb4KdX4FkVxDWPPDlidGg8xry97+ZL7nZAG/QWEt5alTpCoEGN6rY+s5mw8LBqj82kNQEbxKcmzK698sxpHEU= kevin@testing
-"          
+          key: "cat {{ pivars.pub_key_path }}"          
         body_format: json
         headers:
           Content-Type: "application/json"
