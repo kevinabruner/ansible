@@ -49,7 +49,7 @@
           headers:
             Content-Type: "application/json"
             Authorization: "token {{ pivars.GITHUB_ACCESS_TOKEN }}"
-          register: task_log
+          
       
 
 
