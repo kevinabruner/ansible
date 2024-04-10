@@ -21,17 +21,17 @@
 
     - name: Check if known_host exists
       stat:
-        path: "/home/kevin/.ssh/known_hosts"
+        path: "{{ pivars.KNOWN_HOSTS_PATH }}"
       register: known_hosts_stat
 
     - name: Create known_hosts if it doesn't exist
       file:
-        path: "/home/kevin/.ssh/known_hosts"
+        path: "{{ pivars.KNOWN_HOSTS_PATH }}"
         state: touch
       when: not known_hosts_stat.stat.exists
 
     - name: Get the content of known hosts
-      shell: "cat /home/kevin/.ssh/known_hosts | grep github.com"
+      shell: "cat path: "{{ pivars.KNOWN_HOSTS_PATH }}" | grep github.com"
       register: host_stat
       failed_when: host_stat.rc > 1
 
