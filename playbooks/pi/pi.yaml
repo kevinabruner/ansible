@@ -6,6 +6,10 @@
     - name: Ping my hosts
       ansible.builtin.ping:
 
+    - name: Print the value of the key_path
+      ansible.builtin.debug:
+      msg: "The value of my_variable is {{ pivars.KEY_PATH }}"
+
     - name: Check if SSH key is already present
       stat:
         path: "{{ pivars.KEY_PATH }}"
