@@ -80,6 +80,7 @@
 
     - name: Copy the pihole variables file 
       ansible.builtin.copy:
+        remote_src: true
         src: /home/kevin/pi/setupVars.conf
         dest: /etc/pihole/
       become: true
