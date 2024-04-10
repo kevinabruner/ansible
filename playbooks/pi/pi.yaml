@@ -59,4 +59,4 @@
 
 
     - name: Clone the repository
-      shell: GIT_SSH_COMMAND="ssh -i -v -o StrictHostKeyChecking=no -o UserKnownHostsFile={{ pivars.KNOWN_HOSTS_PATH }}" git clone {{ pivars.GIT_REPO }}
+      shell: GIT_SSH_COMMAND="ssh -i -v -o StrictHostKeyChecking=no -o UserKnownHostsFile={{ pivars.KNOWN_HOSTS_PATH }}" git clone {{ pivars.GIT_REPO }} /home/kevin/pi
