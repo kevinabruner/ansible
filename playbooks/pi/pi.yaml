@@ -39,8 +39,8 @@
           validate_certs: no
           method: POST
           body:
-          title: ""
-          key: ""
+          title: "Kevin"
+          key: "/home/kevin/.ssh/id_rsa.pub"
           body_format: json
           headers:
           Content-Type: "application/json"
