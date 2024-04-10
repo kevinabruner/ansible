@@ -67,8 +67,8 @@
 
     - name: Update repositories cache and install "curl" package
       ansible.builtin.apt:
-        become: true
         name: curl
         update_cache: yes
+      become: true
 
 
