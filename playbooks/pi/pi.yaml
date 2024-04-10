@@ -3,7 +3,6 @@
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
   tasks:    
-
     - name: Print the value of the key_path
       ansible.builtin.debug:
       msg: "The value of my_variable is {{ pivars.KEY_PATH }}"
