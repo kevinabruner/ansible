@@ -62,8 +62,9 @@ for repo in repos:
             vm['custom_fields']['VMorContainer'][0] == "vm" and
             vm['custom_fields']['repos'] == repo and
             vm['status']['value'] == 'active'
-        ):            
-                write_with_indent(indent_level, vm["name"] + ":")
-                write_with_indent(indent_level + 1, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
+        ):      
+                write_with_indent(indent_level, "hosts:")      
+                write_with_indent(indent_level + 1, vm["name"] + ":")
+                write_with_indent(indent_level + 2, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
 
                                 
