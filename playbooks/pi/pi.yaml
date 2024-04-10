@@ -2,9 +2,7 @@
   hosts: pi
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
-  tasks:
-    - name: Ping my hosts
-      ansible.builtin.ping:
+  tasks:    
 
     - name: Print the value of the key_path
       ansible.builtin.debug:
