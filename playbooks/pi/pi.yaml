@@ -43,7 +43,8 @@
         method: POST
         body: 
           title: "{{ pivars.KEY_TITLE }}"
-          key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDCfKdycPd96nMVRwU166yImlMSlgjlClJP/JpDx6fUx4xECkpxfiRWyBELTmyFp1loC0ABLL6p86GQEeriABsuOkb9zwOiUTxvJEfwuVPKULvE3kt0nZrQQd0KpGFZ2qbhlTNAUVshU0eYGONevh9AwvjkGLZxakiwIl0XF1X/RzbotYmT7D4hA7yy2/8I97hMTL7a5xSLNMJpfd6rNzq9GwX/o4b06iJjlkyMmgUJevWst4ATb9XAgkJwuuPjXM9dSJi5MwjWYkwH0zCJvutPJ5Z28oy7M1R3+oCbGh+7xNmcOhrCcceV4Z5sq3uYOy/kRR3osCU2pFgirs9TxPwqLHTTiPlcxOvAaACNK9tQDSqI+XwNecBKt4NgvbavI4WgcilqAe3lmUlMskJllEwUi3QrnSGP53LaHu2PRxrPTLfLZI5DKReKzB29FE7ZsMiOCbcTB4SJrBRmxfVB7VSNepqqmLh3RyHb0vRWidKshsz9PXb1Zynpn7nGcbMKxFE= kevin@ansible"          
+          key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIwS7Gk8JYlGWEUHlE0c/Cjdihy/t40+P/sLOLhR4DpOndfjtqBg2aZdkSntJWF+aUqepz8wxE+6Xwvf0IlQtImdB3GvjsDp7rkIg5+DD7AwtcralKnEQqgNDfUHVhzugdtZzDplesWgD0GBin57v4NSK78tiXlsz2KZuj9d08lO0qhkYNwsrAvvUKhW2VMRCKmvU0F6bu3Q2IHFJhN3rtozGO6lZrEBgU2dS/6YuxsO7iFS8WJuAuIMzZcDCrprTzR5d+UCiFOF4ECl14ZgiLM2WjNv9NSPv7Joea8HxqkUTTlZdcY7rHd+kKyhTburjlMwE4eg2VuZ7HzUf4lKB/TAXmnuCt3Tw9OMpEbxXwO/DfGkIznHInaHCF2vrL5rTpOeUgwVNPB0vbmxs9Cd+5s0/6+kh/zdSdmNYkRIsfCFAb4KdX4FkVxDWPPDlidGg8xry97+ZL7nZAG/QWEt5alTpCoEGN6rY+s5mw8LBqj82kNQEbxKcmzK698sxpHEU= kevin@testing
+"          
         body_format: json
         headers:
           Content-Type: "application/json"
