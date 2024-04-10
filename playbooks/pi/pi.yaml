@@ -100,6 +100,13 @@
         dest: /etc/pihole/
       become: true
 
+    - name: Add the ip address to the pihole variables file
+      ansible.builtin.lineinfile:
+        path: /etc/pihole/setupVars.conf
+        regexp: '^IPV4_ADDRESS'
+        line: IPV4_ADDRESS={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+      become: true
+
     - name: Download Pi-hole installation script
       ansible.builtin.get_url:
         url: "https://install.pi-hole.net"
@@ -115,12 +122,7 @@
       ansible.builtin.command: /home/kevin/pi/scripts/sync_local_dns.sh -w /home/kevin/pi
       become: true
 
-    - name: add the ip address to the config file
-      ansible.builtin.lineinfile:
-        path: /etc/pihole/setupVars.conf
-        regexp: '^IPV4_ADDRESS'
-        line: IPV4_ADDRESS={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
-      become: true
+
 
     
 
