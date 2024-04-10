@@ -35,18 +35,19 @@
 
     - name: Add SSH public key to GitHub account
       uri:
-          url: https://api.github.com/user/keys
-          validate_certs: no
-          method: POST
-          body:
+        url: https://api.github.com/user/keys
+        validate_certs: no
+        method: POST
+        body:
           title: "Kevin"
-          key: "/home/kevin/.ssh/id_rsa.pub"
-          body_format: json
-          headers:
+          key: "{{ lookup('file', '/home/kevin/.ssh/id_rsa.pub') }}"
+        body_format: json
+        headers:
           Content-Type: "application/json"
           Authorization: "token "
       register: task_log
-      failed_when: task_log.content.find('key is already in use') == 0
+      failed_when: "'key is already in use' in task_log.stderr"
+
 
     - name: Clone the repository
       shell: GIT_SSH_COMMAND="ssh -i  -v -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"  clone  
