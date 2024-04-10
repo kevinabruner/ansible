@@ -50,7 +50,7 @@
             Content-Type: "application/json"
             Authorization: "token {{ pivars.GITHUB_ACCESS_TOKEN }}"
       register: task_log
-      failed_when: task_log.status != 201 or "'key is already in use' not in task_log.json.errors[*].message"
+      
 
 
 
