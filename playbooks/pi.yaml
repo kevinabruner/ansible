@@ -1,5 +1,5 @@
 - name: My first play
-  hosts: myhosts
+  hosts: pi
   tasks:
    - name: Ping my hosts
      ansible.builtin.ping:
