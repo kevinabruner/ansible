@@ -40,7 +40,7 @@
         method: POST
         body: 
           title: "{{ inventory_hostname }}"
-          key: "cat path: {{ pivars.pub_key_path }}"          
+          key: "{{ lookup('file', pivars.pub_key_path) }}"          
         body_format: json
         headers:
           Content-Type: "application/json"
