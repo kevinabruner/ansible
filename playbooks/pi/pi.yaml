@@ -42,12 +42,12 @@
           validate_certs: no
           method: POST
           body: 
-          title: "{{ pivars.KEY_TITLE }}"
-          key: "{{ pivars.KEY_PATH }}"          
+            title: "{{ pivars.KEY_TITLE }}"
+            key: "{{ pivars.KEY_PATH }}"          
           body_format: json
           headers:
-          Content-Type: "application/json"
-          Authorization: "token {{ pivars.GITHUB_ACCESS_TOKEN }}"
+            Content-Type: "application/json"
+            Authorization: "token {{ pivars.GITHUB_ACCESS_TOKEN }}"
       register: task_log
       failed_when: task_log.content.find('key is already in use') == 0
 
