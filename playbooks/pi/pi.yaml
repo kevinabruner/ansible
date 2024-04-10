@@ -42,7 +42,6 @@
       set_fact:
         key_data: "{{ pub_key_data['content'] | b64decode | trim }}"
 
-
     - name: Add SSH public key to GitHub account
       uri:
         url: https://api.github.com/user/keys
@@ -57,11 +56,6 @@
           Authorization: "token {{ pivars.GITHUB_ACCESS_TOKEN }}"          
       register: task_log
       failed_when: task_log.status != 422 and task_log.status != 201
-
-    - name: Capture task output
-      debug:
-        msg: "Task output: {{ task_log }}"
-
 
     - name: Check if the directory exists and is empty
       stat:
@@ -118,6 +112,7 @@
         path: /etc/pihole/setupVars.conf
         regexp: '^IPV4_ADDRESS'
         line: IPV4_ADDRESS={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
+      become: true
 
     
 
