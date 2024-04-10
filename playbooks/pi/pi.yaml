@@ -3,9 +3,10 @@
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
   tasks:    
-    - name: Ping my hosts
-      ansible.builtin.ping:
-      
+    - name: debug
+      ansible.builtin.debug:
+        msg: "The value of my_variable is {{ my_variable }}"
+    
     - name: Check if SSH key is already present
       stat:
         path: "{{ pivars.KEY_PATH }}"
