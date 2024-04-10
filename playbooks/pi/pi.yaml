@@ -41,10 +41,9 @@
           url: https://api.github.com/user/keys
           validate_certs: no
           method: POST
-          body:
+          body: 
           title: "{{ pivars.KEY_TITLE }}"
-          path: "{{ pivars.KEY_PATH }}"
-          key: "{{ pivars.GITHUB_ACCESS_TOKEN }}"
+          key: "{{ pivars.GITHUB_ACCESS_TOKEN }}"          
           body_format: json
           headers:
           Content-Type: "application/json"
