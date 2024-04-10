@@ -35,7 +35,7 @@
       when: not known_hosts_stat.stat.exists
 
     - name: Get the content of known hosts
-      shell: "cat path: "{{ pivars.KNOWN_HOSTS_PATH }}" | grep github.com"
+      shell: "cat path: {{ pivars.KNOWN_HOSTS_PATH }} | grep github.com"
       register: host_stat
       failed_when: host_stat.rc > 1
 
