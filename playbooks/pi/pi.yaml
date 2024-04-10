@@ -63,7 +63,10 @@
         repo: "git@github.com:kevinabruner/pi.git"
         dest: "/home/kevin/pi"
         clone: yes
+      environment:
+        GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
       when: dir_stat.stat.exists == false or dir_stat.stat.isdir == false or dir_stat.stat.size == 0
+
 
     - name: Update repositories cache and install "curl" package
       ansible.builtin.apt:
