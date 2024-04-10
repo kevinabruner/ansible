@@ -2,10 +2,7 @@
   hosts: pi
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
-  tasks:        
-    - name: debug
-      ansible.builtin.debug:
-        msg: "The value of pivars.KEY_PATH is {{ pivars.KEY_PATH }}"
+  tasks:            
 
     - name: Check if SSH key is already present
       stat:
