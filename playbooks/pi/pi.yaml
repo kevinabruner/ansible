@@ -96,7 +96,9 @@
       ansible.builtin.command: "/tmp/pihole_install.sh --unattended"
       become: true
     
-     name: Run local dns sync from netbox and github
+    - name: Run local dns sync from netbox and github
       ansible.builtin.command: /home/kevin/pi/scripts/sync_local_dns.sh -w /home/kevin/pi
       become: true
+
+    
 
