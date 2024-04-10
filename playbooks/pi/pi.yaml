@@ -44,7 +44,7 @@
         body_format: json
         headers:
           Content-Type: "application/json"
-          Authorization: "GITHUB_ACCESS_TOKEN"
+          Authorization: GITHUB_ACCESS_TOKEN
       register: task_log
       failed_when: "'key is already in use' in task_log.stderr"
 
