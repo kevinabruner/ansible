@@ -56,5 +56,13 @@
 
 
     - name: Clone the repository
-      shell: |        
-        GIT_SSH_COMMAND="git clone git@github.com:kevinabruner/pi.git /home/kevin/pi"
+      shell: git clone git@github.com:kevinabruner/pi.git /home/kevin/pi
+      args:
+        warn: yes
+      register: clone_output
+      ignore_errors: yes
+
+    - name: Check if the repository was cloned successfully
+      fail:
+        msg: "Failed to clone the repository: {{ clone_output.stderr }}"
+      when: clone_output.rc != 0
