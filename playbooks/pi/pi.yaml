@@ -65,30 +65,9 @@
         clone: yes
       when: dir_stat.stat.exists == false or dir_stat.stat.isdir == false or dir_stat.stat.size == 0
 
-    - name: Update package cache
-      apt:
+    - name: Update repositories cache and install "curl" package
+      ansible.builtin.apt:
+        name: curl
         update_cache: yes
-      environment:
-        DEBIAN_FRONTEND: noninteractive
 
-    - name: Upgrade all packages
-      apt:
-        upgrade: yes
-        autoremove: yes
-        autoclean: yes
-      environment:
-        DEBIAN_FRONTEND: noninteractive
-
-    - name: Install necessary packages
-      apt:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - curl
-        - git
-        - gh
-        - python3-pip
-        - python3
-      environment:
-        DEBIAN_FRONTEND: noninteractive
 
