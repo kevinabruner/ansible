@@ -29,7 +29,7 @@
       when: not known_hosts_stat.stat.exists
 
     - name: Get the content of known hosts
-      shell: "cat  | grep github.com"
+      shell: "cat /home/kevin/.ssh/known_hosts | grep github.com"
       register: host_stat
       failed_when: host_stat.rc > 1
 
