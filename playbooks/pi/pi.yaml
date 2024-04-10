@@ -41,8 +41,9 @@
           validate_certs: no
           method: POST
           body:
-          title: ""
-          key: ""
+          title: "{{ pivars.KEY_TITLE }}"
+          path: "{{ pivars.KEY_PATH }}"
+          key: "{{ pivars.GITHUB_ACCESS_TOKEN }}"
           body_format: json
           headers:
           Content-Type: "application/json"
