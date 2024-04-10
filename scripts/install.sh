@@ -2,6 +2,8 @@
 gitDir="/home/kevin/ansible"
 password_file="/home/kevin/ansible-pass"
 
+
+
 sudo apt-get update && sudo apt-get dist-upgrade -y
 sudo apt-get install python3-pip ansible -y
 #sudo cp -R $gitDir/ansible-files/* /etc/ansible
@@ -25,3 +27,5 @@ else
 fi
 
 echo "Configuration updated successfully!"
+
+source /etc/environment
