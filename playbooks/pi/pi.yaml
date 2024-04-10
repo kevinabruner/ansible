@@ -107,6 +107,12 @@
         line: IPV4_ADDRESS={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
       become: true
 
+    - name: Add netbox to the hosts file     
+      ansible.builtin.lineinfile:        
+        path: /etc/hosts
+        line: "192.168.11.30 netbox.thejfk.ca"
+        insertafter: EOF
+
     - name: Download Pi-hole installation script
       ansible.builtin.get_url:
         url: "https://install.pi-hole.net"
