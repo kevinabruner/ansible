@@ -84,3 +84,6 @@
         src: /home/kevin/pi/setupVars.conf
         dest: /etc/pihole/
       become: true
+
+    - name: run pihole installation
+      ansible.builtin.command: curl -sSL https://install.pi-hole.net | sudo bash /dev/stdin --unattended
