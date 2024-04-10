@@ -3,7 +3,10 @@
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
   tasks:        
-    
+    - name: debug
+      ansible.builtin.debug:
+        msg: "The value of pivars.KEY_PATH is {{ pivars.KEY_PATH }}"
+
     - name: Check if SSH key is already present
       stat:
         path: "{{ pivars.pub_key_path }}"
@@ -40,7 +43,7 @@
         method: POST
         body: 
           title: "{{ inventory_hostname }}"
-          key: "cat {{ pivars.pub_key_path }}"          
+          key: "cat path: {{ pivars.pub_key_path }}"          
         body_format: json
         headers:
           Content-Type: "application/json"
