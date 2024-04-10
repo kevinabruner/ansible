@@ -8,7 +8,7 @@
 
     - name: Check if SSH key is already present
       stat:
-        path: pivars['KEY_PATH']
+        path: "{{ pivars.KEY_PATH }}"
       register: key_stat_result
 
     - name: Generate SSH key for accessing GitHub
