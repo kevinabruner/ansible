@@ -78,10 +78,8 @@
         mode: '0755'
       become: true
 
-
-
-    - name: Copy file with owner and permissions
+    - name: Copy the pihole variables file 
       ansible.builtin.copy:
         src: /home/kevin/pi/setupVars.conf
-        dest: /etc/pihole/setupVars.conf
+        dest: /etc/pihole/
       become: true
