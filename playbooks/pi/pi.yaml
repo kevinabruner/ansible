@@ -79,6 +79,7 @@
       become: true
 
     - name: Chown the pihole
+      state: absent
       ansible.builtin.file:
         path: /etc/pihole
         state: directory
