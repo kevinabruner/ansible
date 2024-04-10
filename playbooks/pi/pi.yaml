@@ -112,6 +112,7 @@
         path: /etc/hosts
         line: "192.168.11.30 netbox.thejfk.ca"
         insertafter: EOF
+      become: true
 
     - name: Download Pi-hole installation script
       ansible.builtin.get_url:
