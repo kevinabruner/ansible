@@ -48,6 +48,10 @@
       register: task_log
       failed_when: task_log.status != 422 and task_log.status != 201
 
+    - name: Capture task output
+      debug:
+        msg: "Task output: {{ task_log }}"
+
 
     - name: Check if the directory exists and is empty
       stat:
