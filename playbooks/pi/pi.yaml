@@ -78,15 +78,7 @@
         mode: '0755'
       become: true
 
-    - name: Chown the pihole
-      state: absent
-      ansible.builtin.file:
-        path: /etc/pihole
-        state: directory
-        recurse: yes
-        owner: pihole
-        group: pihole
-      become: true
+
 
     - name: Copy file with owner and permissions
       ansible.builtin.copy:
