@@ -52,9 +52,6 @@
       register: task_log
       failed_when: task_log.status != 422 and task_log.status != 201
 
-
-
-
     - name: Clone the repository
       command: git clone git@github.com:kevinabruner/pi.git /home/kevin/pi
       register: clone_output
@@ -64,4 +61,31 @@
       fail:
         msg: "Failed to clone the repository: {{ clone_output.stderr }}"
       when: clone_output.rc != 0
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: yes
+        autoremove: yes
+        autoclean: yes
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    - name: Install necessary packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - curl
+        - git
+        - gh
+        - python3-pip
+        - python3
+      environment:
+        DEBIAN_FRONTEND: noninteractive
 
