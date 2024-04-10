@@ -15,9 +15,13 @@ def replace_text_in_file(file_path, old_text, new_text):
     with open(file_path, 'w') as file:
         file.write(modified_content)
 
-def indent(indent_level):
+def write_with_indent(indent_level, text_to_write):
     indent_spaces = 2
-    return (" " * indent_level * indent_spaces)
+    indent_text = " " * indent_level * indent_spaces
+    
+    with open(gitDir + '/inventory.yaml', 'a') as file:
+        file.write(indent_text + text_to_write + '\n')   
+    
 
 def et_phone_home(url):
     # Set your token
@@ -49,8 +53,7 @@ shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
 for repo in repos:
     indent_level = 2
     
-    with open(gitDir + '/inventory.yaml', 'a') as file:        
-        file.write(indent(indent_level) + repo + ':\n')   
+    write_with_indent(indent_level, repo + ":")    
                     
     #iterates through the vms 
     for vm in vms["results"]:    
@@ -60,9 +63,7 @@ for repo in repos:
             vm['custom_fields']['repos'] == repo and
             vm['status']['value'] == 'active'
         ):            
-                hostNameLine = indent(indent_level) + vm["name"] + ":"
-                hostIpLine = indent(indent_level + 1) + "ansible host: " + vm["primary_ip4"]["address"].split("/")[0]             
+                write_with_indent(indent_level, vm["name"] + ":")
+                write_with_indent(indent_level + 1, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
 
-                with open(gitDir + '/inventory.yaml', 'a') as file:
-                    file.write(hostNameLine + '\n')   
-                    file.write(hostIpLine + '\n')
+                                
