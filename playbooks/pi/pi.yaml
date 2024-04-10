@@ -59,14 +59,16 @@
         repo: "git@github.com:kevinabruner/pi.git"
         dest: "/home/kevin/pi"
         clone: yes
-      register: git_clone
       ignore_errors: yes
-      when: "'already exists and is not an empty directory' not in git_clone.stderr"
-    
-    - name: Check if the repository was cloned successfully
-      fail:
-        msg: "Failed to clone the repository: {{ clone_output.stderr }}"
-      when: clone_output.rc != 0
+      register: git_clone
+
+    - name: Clone the repository if the directory doesn't exist or is empty
+      git:
+        repo: "git@github.com:kevinabruner/pi.git"
+        dest: "/home/kevin/pi"
+        clone: yes
+      when: git_clone is failed or not (git_clone | succeeded and git_clone.stderr.find('already exists and is not an empty directory') == -1)
+
 
 
     - name: Update package cache
