@@ -33,6 +33,16 @@
       register: host_stat
       failed_when: host_stat.rc > 1
 
+    - name: Read SSH public key file
+      slurp:
+        src: "{{ pivars.pub_key_path }}"
+      register: pub_key_data
+
+    - name: Convert binary data to string
+      set_fact:
+        key_data: "{{ pub_key_data['content'] | b64decode | trim }}"
+
+
     - name: Add SSH public key to GitHub account
       uri:
         url: https://api.github.com/user/keys
@@ -40,7 +50,7 @@
         method: POST
         body: 
           title: "{{ inventory_hostname }}"
-          key: "{{ lookup('file', pivars.pub_key_path) }}"          
+          key: "{{ key_data }}"          
         body_format: json
         headers:
           Content-Type: "application/json"
