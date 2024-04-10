@@ -53,22 +53,13 @@
       failed_when: task_log.status != 422 and task_log.status != 201
 
 
-        
-    - name: Clone the repository if it doesn't exist
-      git:
-        repo: "git@github.com:kevinabruner/pi.git"
-        dest: "/home/kevin/pi"
-        clone: yes
-      ignore_errors: yes
-      register: git_clone
-
+            
     - name: Clone the repository if the directory doesn't exist or is empty
       git:
         repo: "git@github.com:kevinabruner/pi.git"
         dest: "/home/kevin/pi"
         clone: yes
-      when: git_clone is failed or not (git_clone | succeeded and git_clone.stderr.find('already exists and is not an empty directory') == -1)
-
+      when: git_clone is failed or not (ansible_facts['filesystem']['/home/kevin/pi'].exists and ansible_facts['filesystem']['/home/kevin/pi'].isdir and ansible_facts['filesystem']['/home/kevin/pi'].size == 0)
 
 
     - name: Update package cache
