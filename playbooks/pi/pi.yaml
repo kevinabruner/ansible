@@ -80,12 +80,6 @@
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
       when: dir_stat.stat.exists == true and dir_stat.stat.isdir == true and dir_stat.stat.size > 0
 
-    - name: Update repositories cache and install "curl" package
-      ansible.builtin.apt:
-        name: curl
-        update_cache: yes
-      become: true
-
     - name: Create the pihole directory
       ansible.builtin.file:
         path: /etc/pihole
