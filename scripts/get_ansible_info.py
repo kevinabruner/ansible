@@ -53,13 +53,13 @@ shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
 for repo in repos:
     indent_level = 0
     
-    write_with_indent(indent_level, repo + ":")    
+    write_with_indent(indent_level, repo + ":")   
+    write_with_indent(1, "hosts:")      
                     
     #iterates through the vms 
     for vm in vms["results"]:    
 
         indent_level = 1
-        write_with_indent(indent_level, "hosts:")      
 
         if (
             vm['custom_fields']['VMorContainer'][0] == "vm" and
