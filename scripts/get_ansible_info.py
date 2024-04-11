@@ -62,12 +62,12 @@ vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machine
 #gets a list of all the repos/projects
 repos_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=3")
 repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
-populate_inventory_section(repos_bulk, 'repos')
+populate_inventory_section(repos, 'repos')
 
 #gets a list of all the workload stages (dev, prod, other)
 stages_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=4")
 stages = [couplet[0] for couplet in stages_bulk['results'][0]['extra_choices']]
-populate_inventory_section(stages_bulk, 'dev_or_prod')
+populate_inventory_section(stages, 'dev_or_prod')
 
 print(f'stages: {stages}')
 
