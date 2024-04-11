@@ -121,23 +121,18 @@
       become: true
       when: "'pihole-FTL.service' not in ansible_facts.services"
     
-    - name: Run local dns sync from netbox and capture output
+    - name: Read local dns entries from netbox
       shell: "python3 {{ CLONE_DEST }}/scripts/scan_netbox_dns.py"
       register: python_output
-
-    - name: Copy captured output to custom.list
-      copy:
-        content: python_output.stdout
-        dest: /etc/pihole/custom.list
-      become: true
 
     - name: Read contents of github dns file
       slurp:
         src: "{{ CLONE_DEST }}/custom.list"
       register: local_file_content
 
-    - name: Append contents to custom.list
-      lineinfile:
-        line: "{{ local_file_content.content | b64decode }}"
+    - name: Populate custom.list with Netbox and Github sources
+      copy:
+        content: |
+          {{ python_output.stdout }}
+          {{ local_file_content.content | b64decode }}
         dest: "{{ PI_DIR }}/custom.list"
-      become: true
