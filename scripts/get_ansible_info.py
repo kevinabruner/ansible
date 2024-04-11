@@ -46,13 +46,34 @@ vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machine
 repos_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=3")
 repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
 
+#gets a list of all the workload stages (dev, prod, other)
+stages_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=4")
+stages = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
+
 
 shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
 
+for stage in stages:
+    indent_level = 0
+    write_with_indent(indent_level, stage + ":")   
+    write_with_indent(1, "hosts:")      
+                    
+    #iterates through the vms 
+    for vm in vms["results"]:    
+
+        indent_level = 1
+
+        if (
+            vm['custom_fields']['VMorContainer'][0] == "vm" and
+            vm['custom_fields']['repos'] == repo and
+            vm['status']['value'] == 'active'
+        ):      
+                write_with_indent(indent_level + 1, vm["name"] + ":")
+                write_with_indent(indent_level + 2, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
 
 for repo in repos:
     indent_level = 0
-    
+            
     write_with_indent(indent_level, repo + ":")   
     write_with_indent(1, "hosts:")      
                     
