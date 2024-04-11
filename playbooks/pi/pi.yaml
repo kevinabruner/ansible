@@ -138,8 +138,3 @@
         dest: "{{ PI_DIR }}/custom.list"
       become: true
 
-    - name: Append contents to custom.list
-      lineinfile:
-        line: "{{ local_file_content.content | b64decode }}"
-        dest: "{{ PI_DIR }}/custom.list"
-      become: true
