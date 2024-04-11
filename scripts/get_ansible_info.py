@@ -55,13 +55,11 @@ def populate_inventory_section(user_field_array, user_field_name):
 
 
 
-
+#define the terraform directory and empty the terraform configuration file
+gitDir="/home/kevin/ansible"
 
 #wipe the inventory template
 shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
-
-#define the terraform directory and empty the terraform configuration file
-gitDir="/home/kevin/ansible"
 
 #gets a json object of all the vms
 vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
