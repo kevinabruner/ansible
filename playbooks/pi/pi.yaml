@@ -132,12 +132,14 @@
 
     - name: Copy captured output to custom.list
       copy:
-        content: "{{ python_output.stdout }}"
+        content: |
+          "{{ python_output.stdout }}"
+          "{{ local_file_content.content | b64decode }}"
         dest: "{{ PI_DIR }}/custom.list"
       become: true    
 
-    - name: Append contents to custom.list
-      lineinfile:
-        line: "{{ local_file_content.content | b64decode }}"
-        dest: /etc/pihole/custom.list
-      become: true
+    #- name: Append contents to custom.list
+    #  lineinfile:
+    #    line: 
+    #    dest: "{{ PI_DIR }}/custom.list"
+    #  become: true
