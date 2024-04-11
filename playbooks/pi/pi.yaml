@@ -12,11 +12,7 @@
 
     - name: Generate SSH key for accessing GitHub
       command: "ssh-keygen -t rsa -f {{ priv_key_path }} -N ''"
-      when: not key_stat_result.stat.exists
-
-    - name: Get key content
-      command: "cat {{ pub_key_path }}"
-      register: key_content
+      when: not key_stat_result.stat.exists    
 
     - name: Check if known_host exists
       stat:
