@@ -116,10 +116,6 @@
       ansible.builtin.debug:
         msg: "Pi-hole service is running"
       when: "'pihole-FTL.service' in ansible_facts.services"
-    
-    - name: List running services
-      ansible.builtin.debug:
-        msg: "Services {{ ansible_facts.services }}"      
 
     - name: Download Pi-hole installation script
       ansible.builtin.get_url:
@@ -132,7 +128,7 @@
     - name: Run Pi-hole installation script
       ansible.builtin.command: "/tmp/pihole_install.sh --unattended"
       become: true
-      when: "'pihole-FTL.servbice' not in ansible_facts.services"
+      when: "'pihole-FTL.service' not in ansible_facts.services"
 
     
     - name: Run local dns sync from netbox and capture output
