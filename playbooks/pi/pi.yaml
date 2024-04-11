@@ -133,8 +133,8 @@
     - name: Copy captured output to custom.list
       copy:
         content: |
-          "{{ python_output.stdout }}
-          {{ local_file_content.content | b64decode }}"
+          python_output.stdout 
+          {{ local_file_content.content | b64decode }}
         dest: "{{ PI_DIR }}/custom.list"
       become: true    
 
