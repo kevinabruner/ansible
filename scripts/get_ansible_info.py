@@ -41,19 +41,17 @@ def populate_inventory_section(field_array, field_name):
         indent_level = 0
         write_with_indent(indent_level, field + ":")   
         write_with_indent(1, "hosts:")      
-                        
+        print(field)
         #iterates through the vms 
         for vm in vms["results"]:    
-
             indent_level = 1
-
             if (
                 vm['custom_fields']['VMorContainer'][0] == "vm" and
                 vm['custom_fields'][field_name] == field and
                 vm['status']['value'] == 'active'
             ):      
-                    write_with_indent(indent_level + 1, vm["name"] + ":")
-                    write_with_indent(indent_level + 2, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
+                write_with_indent(indent_level + 1, vm["name"] + ":")
+                write_with_indent(indent_level + 2, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
 
 #define the terraform directory and empty the terraform configuration file
 gitDir="/home/kevin/ansible"
