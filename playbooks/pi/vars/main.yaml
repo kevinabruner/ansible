@@ -7,3 +7,5 @@ GIT_BRANCH: main
 CLONE_DEST: /home/{{ ANSIBLE_USER }}/pi
 KNOWN_HOSTS_PATH: /home/{{ ANSIBLE_USER }}/.ssh/known_hosts
 PI_DIR: /etc/pihole
+netbox_dns: netbox.thejfk.ca
+internal_proxy: 192.168.11.30

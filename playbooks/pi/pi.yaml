@@ -51,13 +51,13 @@
 
     - name: Check if the directory exists and is empty
       stat:
-        path: "{{ CLONE_DEST }}"
+        path: CLONE_DEST
       register: dir_stat
 
     - name: Clone the repository if the directory doesn't exist or is empty
       git:
-        repo: "{{ GIT_REPO }}"
-        dest: "{{ CLONE_DEST }}"
+        repo: GIT_REPO
+        dest: CLONE_DEST
         clone: yes
       environment:
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
@@ -65,8 +65,8 @@
 
     - name: Pull from the repository if the directory exists and is not empty
       git:
-        repo: "{{ GIT_REPO }}"
-        dest: "{{ CLONE_DEST }}"
+        repo: GIT_REPO
+        dest: CLONE_DEST
         update: yes
       environment:
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
@@ -83,7 +83,7 @@
       ansible.builtin.copy:
         remote_src: true
         src: "{{ CLONE_DEST }}/setupVars.conf"
-        dest: /etc/pihole/
+        dest: PI_DIR
       become: true
 
     - name: Add the ip address to the pihole variables file
@@ -96,7 +96,7 @@
     - name: Add netbox to the hosts file     
       ansible.builtin.lineinfile:        
         path: /etc/hosts
-        line: "192.168.11.30 netbox.thejfk.ca"
+        line: "{{ internal_proxy }} {{ netbox_dns }}"
         insertafter: EOF
       become: true
 
