@@ -1,5 +1,6 @@
 - name: Build 
   hosts: pi
+  serial: 1
   vars_files:
     - /home/kevin/ansible/playbooks/pi/vars/main.yaml
   tasks:            
