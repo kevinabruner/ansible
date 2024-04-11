@@ -125,11 +125,23 @@
       ansible.builtin.command: "/tmp/pihole_install.sh --unattended"
       become: true
     
-    - name: Run local dns sync from netbox and github
-      ansible.builtin.command: /home/kevin/pi/scripts/sync_local_dns.sh -w /home/kevin/pi
+    - name: Run local dns sync from netbox and capture output
+      shell: python3 /home/kevin/pi/scripts/scan_netbox_dns.py
+      register: python_output
+
+    - name: Copy captured output to custom.list
+      copy:
+        content: "{{ python_output.stdout }}"
+        dest: /etc/pihole/custom.list
       become: true
 
+    - name: Read contents of github dns file
+      slurp:
+        src: /home/kevin/pi/custom.list
+      register: local_file_content
 
-
-    
-
+    - name: Append contents to custom.list
+      lineinfile:
+        line: "{{ local_file_content.content | b64decode }}"
+        dest: /etc/pihole/custom.list
+      become: true
