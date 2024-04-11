@@ -7,36 +7,36 @@
 
     - name: Check if SSH key is already present
       stat:
-        path: "{{ pivars.pub_key_path }}"
+        path: "{{ pub_key_path }}"
       register: key_stat_result
 
     - name: Generate SSH key for accessing GitHub
-      command: "ssh-keygen -t rsa -f {{ pivars.priv_key_path }} -N ''"
+      command: "ssh-keygen -t rsa -f {{ priv_key_path }} -N ''"
       when: not key_stat_result.stat.exists
 
     - name: Get key content
-      command: "cat {{ pivars.pub_key_path }}"
+      command: "cat {{ pub_key_path }}"
       register: key_content
 
     - name: Check if known_host exists
       stat:
-        path: "{{ pivars.KNOWN_HOSTS_PATH }}"
+        path: "{{ KNOWN_HOSTS_PATH }}"
       register: known_hosts_stat
 
     - name: Create known_hosts if it doesn't exist
       file:
-        path: "{{ pivars.KNOWN_HOSTS_PATH }}"
+        path: "{{ KNOWN_HOSTS_PATH }}"
         state: touch
       when: not known_hosts_stat.stat.exists
 
     - name: Get the content of known hosts
-      shell: "cat path: {{ pivars.KNOWN_HOSTS_PATH }} | grep github.com"
+      shell: "cat path: {{ KNOWN_HOSTS_PATH }} | grep github.com"
       register: host_stat
       failed_when: host_stat.rc > 1
 
     - name: Read SSH public key file
       slurp:
-        src: "{{ pivars.pub_key_path }}"
+        src: "{{ pub_key_path }}"
       register: pub_key_data
 
     - name: Convert binary data to string
@@ -54,19 +54,19 @@
         body_format: json
         headers:
           Content-Type: "application/json"
-          Authorization: "token {{ pivars.GITHUB_ACCESS_TOKEN }}"          
+          Authorization: "token {{ GITHUB_ACCESS_TOKEN }}"          
       register: task_log
       failed_when: task_log.status != 422 and task_log.status != 201
 
     - name: Check if the directory exists and is empty
       stat:
-        path: "/home/kevin/pi"
+        path: "{{ CLONE_DEST }}"
       register: dir_stat
 
     - name: Clone the repository if the directory doesn't exist or is empty
       git:
-        repo: "git@github.com:kevinabruner/pi.git"
-        dest: "/home/kevin/pi"
+        repo: "{{ GIT_REPO }}"
+        dest: "{{ CLONE_DEST }}"
         clone: yes
       environment:
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
@@ -74,8 +74,8 @@
 
     - name: Pull from the repository if the directory exists and is not empty
       git:
-        repo: "git@github.com:kevinabruner/pi.git"
-        dest: "/home/kevin/pi"
+        repo: "{{ GIT_REPO }}"
+        dest: "{{ CLONE_DEST }}"
         update: yes
       environment:
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
@@ -83,7 +83,7 @@
 
     - name: Create the pihole directory
       ansible.builtin.file:
-        path: /etc/pihole
+        path: {{ PI_DIR }}
         state: directory
         mode: '0755'
       become: true
@@ -91,13 +91,13 @@
     - name: Copy the pihole variables file 
       ansible.builtin.copy:
         remote_src: true
-        src: /home/kevin/pi/setupVars.conf
+        src: "{{ CLONE_DEST }}/setupVars.conf"
         dest: /etc/pihole/
       become: true
 
     - name: Add the ip address to the pihole variables file
       ansible.builtin.lineinfile:
-        path: /etc/pihole/setupVars.conf
+        path: "{{ PI_DIR }}/setupVars.conf"
         regexp: '^IPV4_ADDRESS'
         line: IPV4_ADDRESS={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}
       become: true
@@ -116,6 +116,10 @@
       ansible.builtin.debug:
         msg: "Pi-hole service is running"
       when: "'pihole-FTL' in ansible_facts.services"
+    
+    - name: List running services
+      ansible.builtin.debug:
+        msg: "Services {{ ansible_facts.services }}"      
 
     - name: Download Pi-hole installation script
       ansible.builtin.get_url:
