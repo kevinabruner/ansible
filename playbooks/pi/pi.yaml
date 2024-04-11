@@ -133,7 +133,7 @@
     - name: Copy captured output to custom.list
       copy:
         content: "{{ python_output.stdout }}"
-        dest: /etc/pihole/custom.list
+        dest: "{{ PI_DIR }}/custom.list"
       become: true    
 
     - name: Append contents to custom.list
