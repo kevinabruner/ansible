@@ -25,11 +25,6 @@
         state: touch
       when: not known_hosts_stat.stat.exists
 
-    - name: Get the content of known hosts
-      shell: "cat path: {{ KNOWN_HOSTS_PATH }} | grep github.com"
-      register: host_stat
-      failed_when: host_stat.rc > 1
-
     - name: Read SSH public key file
       slurp:
         src: "{{ pub_key_path }}"
