@@ -7,3 +7,4 @@ GIT_BRANCH: main
 CLONE_DEST: /home/kevin/pi
 KNOWN_HOSTS_PATH: /home/kevin/.ssh/known_hosts
 GIT_EXECUTABLE: /usr/bin/git
+PI_DIR: /etc/pihole
