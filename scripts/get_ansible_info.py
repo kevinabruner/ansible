@@ -53,6 +53,13 @@ def populate_inventory_section(user_field_array, user_field_name):
                 write_with_indent(indent_level + 1, vm["name"] + ":")
                 write_with_indent(indent_level + 2, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
 
+
+
+
+
+#wipe the inventory template
+shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
+
 #define the terraform directory and empty the terraform configuration file
 gitDir="/home/kevin/ansible"
 
@@ -69,9 +76,5 @@ stages_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-ch
 stages = [couplet[0] for couplet in stages_bulk['results'][0]['extra_choices']]
 populate_inventory_section(stages, 'dev_or_prod')
 
-print(f'stages: {stages}')
-
-
-shutil.copy(gitDir + '/inventory.template', gitDir + '/inventory.yaml')
 
                                 
