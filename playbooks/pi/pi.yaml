@@ -135,6 +135,6 @@
         content: |
           "{{ python_output.stdout }}"
           {{ local_file_content.content | b64decode }}
-        dest: "{{ PI_DIR }}/custom.list"
+        dest: "/etc/pihole/custom.list"
       become: true
 
