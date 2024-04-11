@@ -48,7 +48,7 @@ repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
 
 #gets a list of all the workload stages (dev, prod, other)
 stages_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=4")
-stages = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
+stages = [couplet[0] for couplet in stages_bulk['results'][0]['extra_choices']]
 
 print(f'stages: {stages}')
 
