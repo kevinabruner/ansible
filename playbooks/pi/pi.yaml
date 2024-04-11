@@ -51,13 +51,13 @@
 
     - name: Check if the directory exists and is empty
       stat:
-        path: CLONE_DEST
+        path: "{{ CLONE_DEST }}"
       register: dir_stat
 
     - name: Clone the repository if the directory doesn't exist or is empty
       git:
-        repo: GIT_REPO
-        dest: CLONE_DEST
+        repo: "{{ GIT_REPO }}"
+        dest: "{{ CLONE_DEST }}"
         clone: yes
       environment:
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
@@ -65,8 +65,8 @@
 
     - name: Pull from the repository if the directory exists and is not empty
       git:
-        repo: GIT_REPO
-        dest: CLONE_DEST
+        repo: "{{ GIT_REPO }}"
+        dest: "{{ CLONE_DEST }}"
         update: yes
       environment:
         GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
@@ -74,7 +74,7 @@
 
     - name: Create the pihole directory
       ansible.builtin.file:
-        path:  PI_DIR 
+        path:  "{{ PI_DIR }}"
         state: directory
         mode: '0755'
       become: true
@@ -83,7 +83,7 @@
       ansible.builtin.copy:
         remote_src: true
         src: "{{ CLONE_DEST }}/setupVars.conf"
-        dest: PI_DIR
+        dest: "{{ PI_DIR }}"
       become: true
 
     - name: Add the ip address to the pihole variables file
