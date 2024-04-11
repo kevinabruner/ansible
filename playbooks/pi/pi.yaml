@@ -109,6 +109,9 @@
         insertafter: EOF
       become: true
 
+    - name: Gather facts about services
+      ansible.builtin.service_facts:
+
     - name: Check if Pi-hole service is running
       ansible.builtin.debug:
         msg: "Pi-hole service is running"
