@@ -83,7 +83,7 @@
 
     - name: Create the pihole directory
       ansible.builtin.file:
-        path: {{ PI_DIR }}
+        path:  PI_DIR 
         state: directory
         mode: '0755'
       become: true
