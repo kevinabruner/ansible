@@ -67,7 +67,7 @@ for stage in stages:
 
         if (
             vm['custom_fields']['VMorContainer'][0] == "vm" and
-            vm['custom_fields']['repos'] == stage and
+            vm['custom_fields']['dev_or_prod'] == stage and
             vm['status']['value'] == 'active'
         ):      
                 write_with_indent(indent_level + 1, vm["name"] + ":")
