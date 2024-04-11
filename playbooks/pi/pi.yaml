@@ -130,9 +130,15 @@
         src: "{{ CLONE_DEST }}/custom.list"
       register: local_file_content
 
-    - name: Populate custom.list with Netbox and Github sources
+    - name: Copy captured output to custom.list
       copy:
         content: |
-          {{ python_output.stdout }}
+          "{{ python_output.stdout }}"
           {{ local_file_content.content | b64decode }}
         dest: "{{ PI_DIR }}/custom.list"
+
+    - name: Append contents to custom.list
+      lineinfile:
+        line: "{{ local_file_content.content | b64decode }}"
+        dest: "{{ PI_DIR }}/custom.list"
+      become: true
