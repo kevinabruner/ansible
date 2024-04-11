@@ -36,18 +36,18 @@ def et_phone_home(url):
     response = requests.get(url, headers=headers)
     return response.json()
 
-def populate_inventory_section(field_array, field_name):
-    for field in field_array:
+def populate_inventory_section(user_field_array, user_field_name):
+    for user_field in user_field_array:
         indent_level = 0
-        write_with_indent(indent_level, field + ":")   
+        write_with_indent(indent_level, user_field + ":")   
         write_with_indent(1, "hosts:")      
-        print(field)
+        print(user_field)
         #iterates through the vms 
         for vm in vms["results"]:    
             indent_level = 1
             if (
                 vm['custom_fields']['VMorContainer'][0] == "vm" and
-                vm['custom_fields'][field_name] == field and
+                vm['custom_fields'][user_field_name] == user_field and
                 vm['status']['value'] == 'active'
             ):      
                 write_with_indent(indent_level + 1, vm["name"] + ":")
