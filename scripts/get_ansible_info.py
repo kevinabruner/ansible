@@ -51,7 +51,7 @@ def populate_inventory_section(user_field_array, user_field_name):
                 vm['status']['value'] == 'active'
             ):      
                 write_with_indent(indent_level + 1, vm["name"] + ":")
-                write_with_indent(indent_level + 2, "ansible host: " + vm["primary_ip4"]["address"].split("/")[0])
+                write_with_indent(indent_level + 2, "ansible_host: " + vm["primary_ip4"]["address"].split("/")[0])
 
 
 
