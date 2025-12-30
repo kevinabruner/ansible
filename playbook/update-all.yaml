@@ -1,8 +1,10 @@
-- name: Run scripts update DNS and proxy configuration
+- name: Update DNS, NFS and proxy configuration after netbox update
   hosts: localhost
   vars_files:
   - vars.yaml
   tasks: 
-    - import_playbook: /home/{{ ANSIBLE_USER }}/pi/playbook/update-dns.yaml     
-    - import_playbook: /home/{{ ANSIBLE_USER }}/reverse-proxy/playbook/update-internal-config.yaml
+    - name: Import DNS update playbook
+      import_playbook: /home/{{ ANSIBLE_USER }}/pi/playbook/update-dns.yaml  
+    - name: Import dev reverse proxy config playbook
+      import_playbook: /home/{{ ANSIBLE_USER }}/reverse-proxy/playbook/update-internal-config.yaml
     
