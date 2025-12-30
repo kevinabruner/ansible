@@ -42,13 +42,6 @@
     - name: Migrate the clone to target node
       shell: "qm migrate {{ template_vmid }} pve"
 
-- name: Manipulate clone
-hosts: pve
-vars_files:
-- vars.yaml
-- vault.yaml
-
-tasks:
 - name: Install python3-proxmoxer via apt
   apt:
     name: python3-proxmoxer
