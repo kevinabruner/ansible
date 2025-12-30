@@ -1,0 +1,8 @@
+- name: Run scripts update DNS and proxy configuration
+  hosts: localhost
+  vars_files:
+  - vars.yaml
+  tasks: 
+    - import_playbook: /home/{{ ANSIBLE_USER }}/pi/playbook/update-dns.yaml     
+    - import_playbook: /home/{{ ANSIBLE_USER }}/reverse-proxy/playbook/update-internal-config.yaml
+    
