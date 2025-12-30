@@ -6,7 +6,7 @@
 
 - name: Set facts and skip if VM is not here
   set_fact:
-  is_source_node: "{{ vm_on_node.rc == 0 }}"
+    is_source_node: "{{ vm_on_node.rc == 0 }}"
 
 - name: Template Creation Process
   when: is_source_node
