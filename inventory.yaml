@@ -1,6 +1,7 @@
 plugin: netbox.netbox.nb_inventory
 api_endpoint: http://netbox.thejfk.ca/
-# You can use a vaulted variable here for the token
+vars_files:
+  - playbook/vault.yaml
 token: "{{ netbox_api_token }}"
 validate_certs: True
 config_context: False
