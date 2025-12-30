@@ -3,18 +3,6 @@ import os
 import shutil
 import requests
 
-def replace_text_in_file(file_path, old_text, new_text):
-    # Read the content of the file
-    with open(file_path, 'r') as file:
-        file_content = file.read()
-
-    # Replace the old text with the new text
-    modified_content = file_content.replace(old_text, new_text)
-
-    # Write the modified content back to the file
-    with open(file_path, 'w') as file:
-        file.write(modified_content)
-
 def write_with_indent(indent_level, text_to_write):
     indent_spaces = 2
     indent_text = " " * indent_level * indent_spaces
