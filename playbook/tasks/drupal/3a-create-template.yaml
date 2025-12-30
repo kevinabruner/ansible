@@ -13,7 +13,7 @@
   block:
     - name: Create local shortcuts for VM variables
       set_fact:
-        template_vmid: "{{ vmid }}0"
+        template_vmid: "{{ vmid }} ~ 0"
 
     - name: Check if old template exists ON PVE
       shell: "qm status {{ template_vmid }}"

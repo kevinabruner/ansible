@@ -8,7 +8,7 @@
   set_fact:
     vm_app: "{{ APPLICATION }}" 
     template_name: "{{ APPLICATION }}-golden"
-    template_vmid: "{{ vmid }}0"
+    template_vmid: "{{ vmid }} ~ 0"
 
 - name: Ensure Guest Agent is enabled on clone
   shell: "qm set {{ template_vmid }} --agent 1"
