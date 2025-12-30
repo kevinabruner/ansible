@@ -1,63 +1,89 @@
+#!/usr/bin/env python3
+import json
 import requests
+import subprocess
 import os
-import shutil
-import requests
 
-def write_with_indent(indent_level, text_to_write):
-    indent_spaces = 2
-    indent_text = " " * indent_level * indent_spaces
-    
-    with open(gitDir + '/inventory.yaml', 'a') as file:
-        file.write(indent_text + text_to_write + '\n')   
-    
+# --- Configuration ---
+NETBOX_URL = "https://netbox.thejfk.ca/api"
+TOKEN = "18a09ac581f3b2679df0f538698e2893aac493a7"
 
-def et_phone_home(url):
-    # Set your token
-    TOKEN = "18a09ac581f3b2679df0f538698e2893aac493a7"    
+def get_repo_name():
+    remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"]).decode("utf-8").strip()
+    repo_name = remote_url.split("/")[-1].replace(".git", "")
+    return repo_name
 
-    # Set the headers
+
+def get_netbox_data(endpoint):
     headers = {
         "Authorization": f"Token {TOKEN}",
-        "Accept": "application/json; indent=4"
+        "Accept": "application/json"
     }
-    # Send the GET request
-    response = requests.get(url, headers=headers)
+    response = requests.get(f"{NETBOX_URL}/{endpoint}", headers=headers)
+    response.raise_for_status()
     return response.json()
 
-def populate_inventory_section(user_field_array, user_field_name):
-    for user_field in user_field_array:
-        indent_level = 0
-        write_with_indent(indent_level, user_field + ":")   
-        write_with_indent(1, "hosts:")      
-        print(user_field)
-        #iterates through the vms 
-        for vm in vms["results"]:    
-            indent_level = 1
-            if (
-                vm['custom_fields']['VMorContainer'][0] == "vm" and
-                vm['custom_fields'][user_field_name] == user_field and
-                vm['status']['value'] == 'active'
-            ):      
-                write_with_indent(indent_level + 1, vm["name"] + ":")
-                write_with_indent(indent_level + 2, "ansible_host: " + vm["primary_ip4"]["address"].split("/")[0])
+def generate_inventory():
+    TARGET_REPO = get_repo_name()
 
+    inventory = {
+        "_meta": {"hostvars": {}},
+        "all": {"children": [TARGET_REPO, "dev", "prod"]},
+        "db_server": {"hosts": []},
+        "dev": {"hosts": [], "vars": {}}, 
+        "prod": {"hosts": [], "vars": {}} 
+    }
 
+    # Get VMs
+    vms = get_netbox_data("virtualization/virtual-machines/?limit=1000")
+    # Get IP Addresses
+    ips = get_netbox_data("ipam/ip-addresses/?limit=1000")
 
-#define the terraform directory and empty the terraform configuration file
-gitDir="/home/kevin/ansible"
+    # --- Process VIPs from IP Objects ---
+    for ip in ips.get("results", []):
+        cf = ip.get('custom_fields', {})
+        repo = cf.get('repos_ip')
+        env = cf.get('DevorProdIP') # 'dev' or 'prod'
+        
+        if repo == TARGET_REPO and env in inventory:
+            # Clean the IP (remove /24)
+            clean_ip = ip['address'].split('/')[0]
+            inventory[env]["vars"]["vip"] = clean_ip
+            inventory[env]["vars"]["router_id"] = cf.get('router_address')
 
-#gets a json object of all the vms
-vms = et_phone_home("https://netbox.thejfk.ca/api/virtualization/virtual-machines/?limit=1000")
+    for vm in vms.get("results", []):
+        custom_fields = vm.get('custom_fields', {})
+        
+        # 1. Logic Check: Must be 'active', a 'vm', and match our 'repo'
+        is_active = vm.get('status', {}).get('value') == 'active'
+        is_vm = custom_fields.get('VMorContainer') == ["vm"]
+        is_correct_repo = custom_fields.get('repos') == TARGET_REPO
 
-#gets a list of all the repos/projects
-repos_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=3")
-repos = [couplet[0] for couplet in repos_bulk['results'][0]['extra_choices']]
-populate_inventory_section(repos, 'repos')
+        if is_active and is_vm and is_correct_repo:
+            vm_name = vm["name"]
+            
+            # 2. Extract Network Info
+            raw_ip = vm.get("primary_ip4", {}).get("address", "").split("/")[0]
+            
+            if not raw_ip:
+                continue
 
-#gets a list of all the workload stages (dev, prod, other)
-stages_bulk = et_phone_home("https://netbox.thejfk.ca/api/extras/custom-field-choice-sets/?id=4")
-stages = [couplet[0] for couplet in stages_bulk['results'][0]['extra_choices']]
-populate_inventory_section(stages, 'dev_or_prod')
+            # 3. Handle Environment Groups (dev/prod)
+            env = custom_fields.get('dev_or_prod')
+            if env:
+                if env not in inventory:
+                    inventory[env] = {"hosts": []}
+                inventory[env]["hosts"].append(vm_name)
 
+            # 4. Populate Host Variables (ansible_host)
+            inventory["_meta"]["hostvars"][vm_name] = {
+                "ansible_host": raw_ip,
+                "netbox_id": vm["id"],
+                "proxmox_vmid": custom_fields.get("vmid")
+            }
 
-                                
+    return inventory
+
+if __name__ == "__main__":
+    # Ansible expects JSON output to stdout
+    print(json.dumps(generate_inventory(), indent=2))
