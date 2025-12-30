@@ -15,3 +15,5 @@ keyed_groups:
   # Creates groups like: env_dev, env_prod
   - prefix: env
     key: custom_fields.dev_or_prod
+  - prefix: role
+    key: device_roles
