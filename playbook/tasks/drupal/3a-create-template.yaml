@@ -1,5 +1,5 @@
 - name: Check if the Dev VM is registered on THIS node
-  shell: "qm config {{ hostvars[target_vm]['proxmox_vmid'] }}"
+  shell: "qm config {{ vmid }}"
   register: vm_on_node
   failed_when: false
   changed_when: false
@@ -13,8 +13,7 @@
   block:
     - name: Create local shortcuts for VM variables
       set_fact:
-        vm_id: "{{ hostvars[target_vm]['proxmox_vmid'] }}"
-        template_vmid: "{{ hostvars[target_vm]['proxmox_vmid'] }}0"
+        template_vmid: "{{ vmid }}0"
 
     - name: Check if old template exists ON PVE
       shell: "qm status {{ template_vmid }}"
@@ -34,7 +33,7 @@
     - name: Clone Dev VM
       become: true
       shell: >
-        qm clone {{ vm_id }} {{ template_vmid }} 
+        qm clone {{ vmid }} {{ template_vmid }} 
         --full 
         --name {{ APPLICATION }}-golden 
         --storage truenas-nfs 

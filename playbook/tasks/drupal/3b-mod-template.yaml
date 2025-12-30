@@ -1,15 +1,14 @@
-# - name: Install python3-proxmoxer via apt
-#   apt:
-#     name: python3-proxmoxer
-#     state: present
-#     update_cache: yes
+- name: Install python3-proxmoxer via apt
+  apt:
+    name: python3-proxmoxer
+    state: present
+    update_cache: yes
     
 - name: Create local shortcuts for VM variables
   set_fact:
-    vm_id: "{{ hostvars[target_vm]['proxmox_vmid'] }}"
     vm_app: "{{ APPLICATION }}" 
     template_name: "{{ APPLICATION }}-golden"
-    template_vmid: "{{ hostvars[target_vm]['proxmox_vmid'] }}0"
+    template_vmid: "{{ vmid }}0"
 
 - name: Ensure Guest Agent is enabled on clone
   shell: "qm set {{ template_vmid }} --agent 1"
