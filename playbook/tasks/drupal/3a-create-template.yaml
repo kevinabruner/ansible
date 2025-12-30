@@ -18,28 +18,33 @@
   block:
     - name: Create local shortcuts for VM variables
       set_fact:
-        template_vmid: "{{ vmid ~ '0' }}"
+        vm_id: "{{ hostvars[target_vm]['proxmox_vmid'] }}"
+        template_vmid: "{{ hostvars[target_vm]['proxmox_vmid'] }}0"
 
     - name: Check if old template exists ON PVE
-      shell: "qm status {{ template_vmid }}"
+      # ADDED FULL PATH /usr/sbin/
+      shell: "/usr/sbin/qm status {{ template_vmid }}"
       delegate_to: pve  
       register: template_check
       failed_when: false
       changed_when: false
 
     - name: Destroy old template ON PVE
-      shell: "qm destroy {{ template_vmid }} --purge"
+      # ADDED FULL PATH /usr/sbin/
+      shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
       delegate_to: pve  
       when: template_check.rc == 0
       async: 60    
       poll: 5      
 
     - name: Clone Dev VM
+      # ADDED FULL PATH /usr/sbin/
       shell: >
-        qm clone {{ vmid }} {{ template_vmid }} 
+        /usr/sbin/qm clone {{ vm_id }} {{ template_vmid }} 
         --full 
         --name {{ APPLICATION }}-golden 
         --storage truenas-nfs 
 
     - name: Migrate the clone to target node
-      shell: "qm migrate {{ template_vmid }} pve"
+      # ADDED FULL PATH /usr/sbin/
+      shell: "/usr/sbin/qm migrate {{ template_vmid }} pve"
