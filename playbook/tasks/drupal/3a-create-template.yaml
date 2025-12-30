@@ -4,6 +4,10 @@
   failed_when: false
   changed_when: false
 
+- name: DEBUG - Identify VM ID for check
+  debug:
+    msg: "Node {{ inventory_hostname }} is looking for VM ID: {{ hostvars[target_vm].custom_fields.vmid | default('NOT_FOUND') }}"
+
 - name: Set facts and skip if VM is not here
   set_fact:
     is_source_node: "{{ vm_on_node.rc == 0 }}"
