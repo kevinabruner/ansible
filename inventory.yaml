@@ -4,6 +4,8 @@ token: 18a09ac581f3b2679df0f538698e2893aac493a7
 netbox_api_token: 
 validate_certs: True
 config_context: False
+vm_query_filters:
+  - status: 'active'
 
 # This is the magic part: creating groups from custom fields
 keyed_groups:
