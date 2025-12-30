@@ -3,6 +3,7 @@
     name: python3-proxmoxer
     state: present
     update_cache: yes
+  become: true
     
 - name: Create local shortcuts for VM variables
   set_fact:
