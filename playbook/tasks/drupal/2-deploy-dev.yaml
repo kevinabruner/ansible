@@ -104,10 +104,18 @@
     src: "{{ git_dir }}/templates/settings.php.j2"
     dest: "/var/www/html/sites/default/settings.php"     
         
+- name: Check if source themes exist locally
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.stat:
+    path: "{{ git_dir }}/drupal/themes/"
+  register: local_themes
+
 - name: Copy theme(s)
-  copy:
+  ansible.builtin.copy:
     src: "{{ git_dir }}/drupal/themes/"
-    dest: "/var/www/html/themes/contrib/"    
+    dest: "/var/www/html/themes/contrib/"
+  when: local_themes.stat.exists 
 
 - name: Copy .bash_aliases
   copy:
