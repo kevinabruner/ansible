@@ -2,7 +2,7 @@ plugin: netbox.netbox.nb_inventory
 api_endpoint: http://netbox.thejfk.ca/
 vars_files:
   - playbook/vault.yaml
-token: 18a09ac581f3b2679df0f538698e2893aac493a7
+token: "{{ netbox_api_token }}"
 validate_certs: True
 config_context: False
 
