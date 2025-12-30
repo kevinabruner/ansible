@@ -3,7 +3,7 @@
   register: vm_on_node
   failed_when: false
   changed_when: false
-  become: true
+  remote_user: root  
 
 - name: DEBUG - Identify VM ID for check
   debug:
@@ -11,7 +11,7 @@
 
 - name: Set facts and skip if VM is not here
   set_fact:
-    is_source_node: "{{ vm_on_node.rc | int == 0 }}"
+    is_source_node: "{{ vm_on_node.rc == 0 }}"
 
 - name: Template Creation Process
   when: is_source_node
