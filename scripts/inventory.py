@@ -8,12 +8,6 @@ import os
 NETBOX_URL = "https://netbox.thejfk.ca/api"
 TOKEN = "18a09ac581f3b2679df0f538698e2893aac493a7"
 
-def get_repo_name():
-    remote_url = subprocess.check_output(["git", "remote", "get-url", "origin"]).decode("utf-8").strip()
-    repo_name = remote_url.split("/")[-1].replace(".git", "")
-    return repo_name
-
-
 def get_netbox_data(endpoint):
     headers = {
         "Authorization": f"Token {TOKEN}",
@@ -24,32 +18,18 @@ def get_netbox_data(endpoint):
     return response.json()
 
 def generate_inventory():
-    TARGET_REPO = get_repo_name()
 
     inventory = {
         "_meta": {"hostvars": {}},
         "all": {"children": [TARGET_REPO, "dev", "prod"]},
-        "db_server": {"hosts": []},
         "dev": {"hosts": [], "vars": {}}, 
         "prod": {"hosts": [], "vars": {}} 
     }
 
     # Get VMs
-    vms = get_netbox_data("virtualization/virtual-machines/?limit=1000")
+    vms = get_netbox_data("virtualization/virtual-machines/")
     # Get IP Addresses
-    ips = get_netbox_data("ipam/ip-addresses/?limit=1000")
-
-    # --- Process VIPs from IP Objects ---
-    for ip in ips.get("results", []):
-        cf = ip.get('custom_fields', {})
-        repo = cf.get('repos_ip')
-        env = cf.get('DevorProdIP') # 'dev' or 'prod'
-        
-        if repo == TARGET_REPO and env in inventory:
-            # Clean the IP (remove /24)
-            clean_ip = ip['address'].split('/')[0]
-            inventory[env]["vars"]["vip"] = clean_ip
-            inventory[env]["vars"]["router_id"] = cf.get('router_address')
+    ips = get_netbox_data("ipam/ip-addresses/")
 
     for vm in vms.get("results", []):
         custom_fields = vm.get('custom_fields', {})
