@@ -31,12 +31,10 @@
       shell: "qm destroy {{ template_vmid }} --purge"
       delegate_to: pve  
       when: template_check.rc == 0
-      become: true
       async: 60    
       poll: 5      
 
     - name: Clone Dev VM
-      become: true
       shell: >
         qm clone {{ vmid }} {{ template_vmid }} 
         --full 
