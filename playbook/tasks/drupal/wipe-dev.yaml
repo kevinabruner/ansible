@@ -1,0 +1,21 @@
+- name: Re-deploy dev servers for fresh installation 
+  hosts: repo_nerdperk:&env_dev
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  serial: 1  
+  tasks:
+    - name: Force Terraform to recreate this specific node
+      delegate_to: terraform
+      shell: |
+        # Constructing the module path dynamically based on hostname
+        terraform taint 'module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]'
+        terraform apply -target='module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]' -auto-approve
+      args:
+        chdir: "/home/kevin/terraform"
+
+    - name: Clear old SSH host key from local machine
+      delegate_to: localhost
+      shell: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"
+      ignore_errors: true
+  

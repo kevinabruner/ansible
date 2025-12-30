@@ -1,0 +1,155 @@
+- name: Install apt packages
+  apt:
+    update_cache: yes
+    name: "{{ item }}"
+  loop:
+    - apache2
+    - mysql-client
+    - php
+    - php-gd
+    - php-pdo
+    - php-mysql
+    - php-dom
+    - php-mbstring
+    - php-curl
+    - ncdu
+    - gh        
+    - vim
+    - nfs-common
+    - htop   
+    - qemu-guest-agent
+  become: true
+
+- name: Enable and stop apache2 and qemu 
+  ansible.builtin.service:
+    name: "{{ item }}"
+    enabled: yes
+    state: stopped
+  loop:
+    - apache2
+    - qemu-guest-agent
+  become: true 
+
+- name: Add NFS share entry to /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    line: "{{ nfs_server }}:{{ nfs_share }}    {{ nfs_target_dir }}    nfs    defaults    0 0"
+    insertafter: EOF
+  become: true                           
+
+- name: Unmount NFS share if mounted
+  become: true
+  ansible.posix.mount:
+    path: /var/www/html/sites/default/files
+    state: unmounted
+
+- name: Remove web directory if it exists
+  become: true
+  ansible.builtin.file:
+    path: "/var/www/html/"
+    state: absent      
+
+- name: Create config sync
+  file:
+    path: /var/www/sync
+    state: directory
+  become: true
+
+- name: Sync web directory
+  ansible.posix.synchronize:
+    src: "{{ git_dir }}/.build/html/" 
+    dest: "/var/www/html/"
+    delete: yes
+    rsync_opts:
+      - "--exclude=sites/default/files"
+      - "--exclude=sites/default/settings.php"
+  become: true
+
+- name: Sync vendor directory
+  ansible.posix.synchronize:
+    src: "{{ git_dir }}/.build/vendor/"
+    dest: "/var/www/vendor/"
+    delete: yes
+  become: true
+
+- name: Replace Apache options for symlinks
+  ansible.builtin.replace:
+    path: /etc/apache2/apache2.conf
+    regexp: "(<Directory /var/www/>)\\n(\\s+Options Indexes FollowSymLinks\\n\\s+AllowOverride) None(\\n\\s+Require all granted\\n</Directory>)"
+    replace: "\\1\\n\\2 All\\3"
+    backup: yes
+  become: true
+
+- name: Enable Apache rewrite and status modules
+  become: true
+  command: a2enmod rewrite status
+
+- name:  disable apache default site
+  become: true
+  command: a2dissite 000-default.conf
+
+- name: Copy the haproxy-target apache configuration file
+  become: true
+  template:
+    src: "{{ git_dir }}/templates/haproxy-target.conf.j2"
+    dest: "/etc/apache2/sites-available/haproxy-target.conf"     
+
+- name:  enable haproxy-target site
+  become: true
+  command: a2ensite haproxy-target
+
+- name: Copy php settings file
+  become: true
+  template:
+    src: "{{ git_dir }}/templates/settings.php.j2"
+    dest: "/var/www/html/sites/default/settings.php"     
+        
+- name: Copy theme(s)
+  copy:
+    src: "{{ git_dir }}/drupal/themes/"
+    dest: "/var/www/html/themes/contrib/"    
+
+- name: Copy .bash_aliases
+  copy:
+    src: "{{ git_dir }}/drupal/.bash_aliases"
+    dest: "/home/{{ ANSIBLE_USER }}/"    
+
+- name: Set ownership to www-data on target web dir
+  ansible.builtin.file:
+    path: /var/www/
+    owner: www-data
+    group: www-data
+    recurse: yes
+  become: true        
+
+- name: Create NFS mount point 
+  file:
+    path: /var/www/html/sites/default/files
+    state: directory
+  become: true
+
+- name: Mount all NFS shares
+  become: true
+  command: mount -a    
+
+- name: Set ownership and permissions recursively on NFS
+  become: true
+  ansible.builtin.file:
+    path: "{{ nfs_target_dir }}"
+    owner: "www-data"
+    group: "www-data"
+    mode: "0775"
+    recurse: yes
+
+- name: Refresh cache and dbs
+  import_tasks: tasks/update-cache-and-dbs.yaml
+
+- name: Start apache2 and qemu 
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - apache2
+    - qemu-guest-agent
+  become: true
