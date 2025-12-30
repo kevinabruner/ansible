@@ -8,3 +8,5 @@
   import_playbook: ../../reverse-proxy/playbook/update-internal-config.yaml
 - name: Import external reverse proxy config playbook
   import_playbook: ../../reverse-proxy/playbook/update-external-config.yaml
+- name: Import NAS nfs permissions playbook
+  import_playbook: ../../truenas/playbook/set-nfs-perms.yaml
