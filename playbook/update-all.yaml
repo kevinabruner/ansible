@@ -3,7 +3,7 @@
   vars_files:
   - vars.yaml
 - name: Import DNS update playbook
-  import_playbook: ../../pi/playbook/update-dns.yaml  
+  import_playbook: ../../pi/playbook/update-dns.yaml 
 - name: Import dev reverse proxy config playbook
   import_playbook: ../../reverse-proxy/playbook/update-internal-config.yaml
     
