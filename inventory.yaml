@@ -1,6 +1,5 @@
 plugin: netbox.netbox.nb_inventory
 api_endpoint: http://netbox.thejfk.ca/
-token: "{{ netbox_api_token }}"
 validate_certs: True
 config_context: False
 
