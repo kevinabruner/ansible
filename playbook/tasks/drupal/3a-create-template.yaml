@@ -3,6 +3,7 @@
   register: vm_on_node
   failed_when: false
   changed_when: false
+  become: true
 
 - name: DEBUG - Identify VM ID for check
   debug:
