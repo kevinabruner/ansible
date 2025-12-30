@@ -1,8 +1,6 @@
 plugin: netbox.netbox.nb_inventory
 api_endpoint: http://netbox.thejfk.ca/
-vars_files:
-  - playbook/vault.yaml
-token: "{{ lookup('ansible.builtin.unvault', 'playbook/vault.yaml') }}"
+token: "{{ netbox_api_token }}"
 validate_certs: True
 config_context: False
 
