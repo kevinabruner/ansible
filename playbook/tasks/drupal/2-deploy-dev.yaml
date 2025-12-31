@@ -33,7 +33,7 @@
 - name: Add NFS share entry to /etc/fstab
   lineinfile:
     path: /etc/fstab
-    line: "{{ nfs_server }}:{{ nfs_share }}    {{ nfs_target_dir }}    nfs    defaults    0 0"
+    line: "{{ nfs_server }}:{{ nfs_share }}    {{ nfs_target_dir }}    nfs    defaults,x-systemd.automount,x-systemd.idle-timeout=60s    0 0"
     insertafter: EOF
   become: true                           
 
