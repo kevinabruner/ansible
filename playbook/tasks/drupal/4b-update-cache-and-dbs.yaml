@@ -1,0 +1,13 @@
+- name: Rebuild Drupal Cache (drush cr)      
+  ansible.builtin.command:
+    cmd: /var/www/vendor/drush/drush/drush cr
+  args:
+    chdir: "/var/www"            
+  run_once: true
+
+- name: Update Drupal (drush up)      
+  ansible.builtin.command:
+    cmd: /var/www/vendor/drush/drush/drush updb -y
+  args:
+    chdir: "/var/www"      
+  run_once: true
