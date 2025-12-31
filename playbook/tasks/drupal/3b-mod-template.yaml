@@ -1,0 +1,57 @@
+# - name: Install python3-proxmoxer via apt
+#   apt:
+#     name: python3-proxmoxer
+#     state: present
+#     update_cache: yes
+    
+- name: Create local shortcuts for VM variables
+  set_fact:
+    vm_app: "{{ APPLICATION }}" 
+    template_name: "{{ APPLICATION }}-golden"
+    template_vmid: "{{ vmid ~ '0' }}"
+
+- name: Ensure Guest Agent is enabled on clone
+  shell: "qm set {{ template_vmid }} --agent 1"
+
+- name: Start the cloned VM
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_token_id }}"
+    api_token_secret: "{{ proxmox_token_secret }}"
+    api_host: "{{ inventory_hostname }}"
+    vmid: "{{ template_vmid }}"
+    state: started
+
+- name: Wait for Guest Agent to respond
+  shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
+  register: agent_ready
+  until: agent_ready.rc == 0
+  retries: 20
+  delay: 10
+
+- name: Sanitize via Guest Agent
+  shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
+  loop:
+    - "cloud-init clean --logs"
+    - "truncate -s 0 /etc/machine-id"
+    - "rm -f /etc/ssh/ssh_host_*"
+
+- name: Shutdown the clone
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_token_id }}"
+    api_token_secret: "{{ proxmox_token_secret }}"
+    api_host: "{{ inventory_hostname }}"
+    vmid: "{{ template_vmid }}"
+    state: stopped
+    timeout: 300  
+
+- name: Wait for VM to reach stopped state
+  shell: "qm status {{ template_vmid }}"
+  register: vm_status
+  until: "'stopped' in vm_status.stdout"
+  retries: 12
+  delay: 5  
+
+- name: Finalize conversion to Template
+  shell: "qm template {{ template_vmid }}"

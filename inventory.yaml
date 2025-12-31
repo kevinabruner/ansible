@@ -1,0 +1,19 @@
+plugin: netbox.netbox.nb_inventory
+api_endpoint: http://netbox.thejfk.ca/
+token: 18a09ac581f3b2679df0f538698e2893aac493a7
+netbox_api_token: 
+validate_certs: True
+config_context: False
+vm_query_filters:
+  - status: 'active'
+
+# This is the magic part: creating groups from custom fields
+keyed_groups:
+  # Creates groups like: repo_frontend, repo_database
+  - prefix: repo
+    key: custom_fields.repos
+  # Creates groups like: env_dev, env_prod
+  - prefix: env
+    key: custom_fields.dev_or_prod
+  - prefix: role
+    key: device_roles

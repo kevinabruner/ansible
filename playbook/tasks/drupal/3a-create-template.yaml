@@ -1,0 +1,45 @@
+- name: Check if the Dev VM is registered on THIS node
+  shell: "/usr/sbin/qm config {{ vmid }}"
+  register: vm_on_node
+  failed_when: false
+  changed_when: false
+  remote_user: root  
+
+- name: DEBUG - Identify VM ID for check
+  debug:
+    msg: "Node {{ inventory_hostname }} is looking for VM ID: {{ hostvars[target_vm].custom_fields.vmid | default('NOT_FOUND') }}"
+
+- name: Set facts and skip if VM is not here
+  set_fact:
+    is_source_node: "{{ vm_on_node.rc == 0 }}"
+
+- name: Template Creation Process
+  when: is_source_node
+  block:
+    - name: Create local shortcuts for VM variables
+      set_fact:
+        template_vmid: "{{ vmid ~ '0' }}"
+
+    - name: Check if old template exists ON PVE
+      shell: "/usr/sbin/qm status {{ template_vmid }}"
+      delegate_to: pve  
+      register: template_check
+      failed_when: false
+      changed_when: false
+
+    - name: Destroy old template ON PVE
+      shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
+      delegate_to: pve  
+      when: template_check.rc == 0
+      async: 60    
+      poll: 5      
+
+    - name: Clone Dev VM
+      shell: >
+        /usr/sbin/qm clone {{ vmid }} {{ template_vmid }} 
+        --full 
+        --name {{ APPLICATION }}-golden 
+        --storage truenas-nfs 
+
+    - name: Migrate the clone to target node
+      shell: "/usr/sbin/qm migrate {{ template_vmid }} pve"

@@ -4,6 +4,9 @@
   - vars.yaml
 - name: Import DNS update playbook
   import_playbook: ../../pi/playbook/update-dns.yaml 
-- name: Import dev reverse proxy config playbook
+- name: Import internal reverse proxy config playbook
   import_playbook: ../../reverse-proxy/playbook/update-internal-config.yaml
-    
+- name: Import external reverse proxy config playbook
+  import_playbook: ../../reverse-proxy/playbook/update-external-config.yaml
+- name: Import NAS nfs permissions playbook
+  import_playbook: ../../truenas/playbook/set-nfs-perms.yaml

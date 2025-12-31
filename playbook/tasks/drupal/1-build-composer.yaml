@@ -1,0 +1,32 @@
+- name: Remove local build directory if it exists
+  delegate_to: localhost
+  ansible.builtin.file:
+    path: "{{ git_dir }}/.build"
+    state: absent
+  run_once: true
+
+- name: Ensure .build directory exists locally
+  delegate_to: localhost
+  ansible.builtin.file:
+    path: "{{ git_dir }}/.build"
+    state: directory
+    mode: "0755"
+  run_once: true
+
+- name: Copy composer file
+  copy:
+    src: "{{ git_dir }}/drupal/composer.json"
+    dest: "{{ git_dir }}/.build/composer.json" 
+  run_once: true
+
+- name: build composer project locally
+  community.general.composer:
+    command: install
+    working_dir: "{{ git_dir }}/.build"
+  register: composer_output
+
+- name: Show composer output
+  debug:
+    var: composer_output.stdout_lines
+  run_once: true
+  when: composer_output.stdout is defined
