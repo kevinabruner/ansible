@@ -33,7 +33,7 @@
 - name: Add NFS share entry to /etc/fstab
   lineinfile:
     path: /etc/fstab
-    line: "{{ share.server }}:{{ share.remote_path }}    {{ share.local_path }}    nfs    {{ nfs_options | join(',') }}    0 0
+    line: "{{ share.server }}:{{ share.remote_path }}    {{ share.local_path }}    nfs    {{ nfs_options | join(',') }}    0 0"
   insertafter: EOF
   become: true                           
 
