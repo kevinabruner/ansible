@@ -34,7 +34,7 @@
   lineinfile:
     path: /etc/fstab
     line: "{{ share.server }}:{{ share.remote_path }}    {{ share.local_path }}    nfs    {{ nfs_options | join(',') }}    0 0"
-  insertafter: EOF
+    insertafter: EOF
   become: true                           
 
 - name: Unmount NFS share if mounted
