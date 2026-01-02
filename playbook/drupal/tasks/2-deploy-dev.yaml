@@ -181,7 +181,7 @@
     recurse: yes
 
 - name: Refresh cache and dbs
-  import_tasks: /home/{{ ANSIBLE_USER }}/ansible/playbook/tasks/drupal/4b-update-cache-and-dbs.yaml
+  import_tasks: /home/{{ ANSIBLE_USER }}/ansible/playbook/drupal/tasks/4b-update-cache-and-dbs.yaml
 
 - name: Start apache2 and qemu 
   ansible.builtin.systemd:
