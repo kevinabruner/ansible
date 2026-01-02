@@ -165,10 +165,10 @@
     state: mounted
   become: true
 
-- name: Set ownership and permissions recursively on NFS
+- name: Set ownership and permissions recursively on ceph
   become: true
   ansible.builtin.file:
-    path: "{{ nfs_target_dir }}"
+    path: "{{ ceph_target_dir }}"
     owner: "www-data"
     group: "www-data"
     mode: "0775"
