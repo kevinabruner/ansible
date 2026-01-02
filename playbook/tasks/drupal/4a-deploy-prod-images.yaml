@@ -36,6 +36,16 @@
     src: "{{ git_dir }}/templates/settings.php.j2"
     dest: "/var/www/html/sites/default/settings.php"     
 
+- name: Create staggered rsync cron job on prod servers (start at 3am)
+  ansible.builtin.cron:
+    name: "Backup CephFS to NFS"
+    hour: "{{ (3 + ansible_play_hosts.index(inventory_hostname)) % 24 }}"
+    minute: "0"
+    job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
+    user: root
+    state: present
+  become: true
+
 - name: Start apache 
   ansible.builtin.systemd:
     name: "{{ item }}"

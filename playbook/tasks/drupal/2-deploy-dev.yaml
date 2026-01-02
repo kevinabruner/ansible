@@ -18,6 +18,7 @@
     - nfs-common
     - htop   
     - qemu-guest-agent
+    - ceph-common
   become: true
 
 - name: Enable and stop apache2 and qemu 
@@ -37,11 +38,26 @@
     insertafter: EOF
   become: true                           
 
+- name: Unmount ceph share if mounted
+  become: true
+  ansible.posix.mount:
+    path: "{{ ceph_target_dir }}"
+    state: unmounted
+
 - name: Unmount NFS share if mounted
   become: true
   ansible.posix.mount:
-    path: /var/www/html/sites/default/files
+    path: "{{ nfs_target_dir }}"
     state: unmounted
+
+- name: Create Ceph secret file
+  copy:
+    content: "{{ ceph_secret }}"
+    dest: "/etc/ceph/{{ ceph_user }}.secret"
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
 
 - name: Remove web directory if it exists
   become: true
@@ -132,7 +148,13 @@
 
 - name: Create NFS mount point 
   file:
-    path: /var/www/html/sites/default/files
+    path: "{{ nfs_target_dir }}"
+    state: directory
+  become: true
+
+- name: Create ceph mount point 
+  file:
+    path: "{{ ceph_target_dir }}"
     state: directory
   become: true
 
@@ -140,10 +162,19 @@
   become: true
   command: mount -a    
 
-- name: Set ownership and permissions recursively on NFS
+- name: Mount CephFS and add to fstab
+  ansible.posix.mount:
+    path: "{{ ceph_target_dir }}"
+    src: "{{ ceph_monitors }}:/{{ APPLICATION }}"
+    fstype: ceph
+    opts: "name={{ ceph_user }},secretfile=/etc/ceph/{{ ceph_user }}.secret,_netdev"
+    state: mounted
+  become: true
+
+- name: Set ownership and permissions recursively on ceph
   become: true
   ansible.builtin.file:
-    path: "{{ nfs_target_dir }}"
+    path: "{{ ceph_target_dir }}"
     owner: "www-data"
     group: "www-data"
     mode: "0775"
