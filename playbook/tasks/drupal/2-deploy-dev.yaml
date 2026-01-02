@@ -158,7 +158,7 @@
 
 - name: Mount CephFS and add to fstab
   ansible.posix.mount:
-    path: "{{ mount_path }}"
+    path: "{{ ceph_target_dir }}"
     src: "{{ ceph_monitors }}:/{{ APPLICATION }}"
     fstype: ceph
     opts: "name={{ ceph_user }},secretfile=/etc/ceph/{{ ceph_user }}.secret,_netdev"
