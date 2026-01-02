@@ -44,6 +44,7 @@
     job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
     user: root
     state: present
+  become: true
 
 - name: Start apache 
   ansible.builtin.systemd:
