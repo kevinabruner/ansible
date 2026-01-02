@@ -148,7 +148,7 @@
 
 - name: Create NFS mount point 
   file:
-    path: /var/www/html/sites/default/files
+    path: "{{ nfs_target_dir }}"
     state: directory
   become: true
 
