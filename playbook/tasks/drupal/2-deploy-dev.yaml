@@ -152,6 +152,12 @@
     state: directory
   become: true
 
+- name: Create ceph mount point 
+  file:
+    path: "{{ ceph_target_dir }}"
+    state: directory
+  become: true
+
 - name: Mount all NFS shares
   become: true
   command: mount -a    
