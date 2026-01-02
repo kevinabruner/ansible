@@ -57,6 +57,7 @@
     owner: root
     group: root
     mode: '0600'
+  become: true
 
 - name: Remove web directory if it exists
   become: true
@@ -162,6 +163,7 @@
     fstype: ceph
     opts: "name={{ ceph_user }},secretfile=/etc/ceph/{{ ceph_user }}.secret,_netdev"
     state: mounted
+  become: true
 
 - name: Set ownership and permissions recursively on NFS
   become: true
