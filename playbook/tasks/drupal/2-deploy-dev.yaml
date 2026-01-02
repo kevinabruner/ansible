@@ -183,16 +183,6 @@
 - name: Refresh cache and dbs
   import_tasks: /home/{{ ANSIBLE_USER }}/ansible/playbook/tasks/drupal/4b-update-cache-and-dbs.yaml
 
-- name: Create staggered rsync cron job on prod servers
-  ansible.builtin.cron:
-    name: "Backup CephFS to NFS"
-    hour: "{{ (start_hour + ansible_play_hosts.index(inventory_hostname)) % 24 }}"
-    minute: "0"
-    job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
-    user: root
-    state: present
-  when: env == 'prod'
-
 - name: Start apache2 and qemu 
   ansible.builtin.systemd:
     name: "{{ item }}"
