@@ -38,7 +38,7 @@
 
         - name: Copy php settings file
           ansible.builtin.template:
-            src: "{{ hostvars[target_host].git_dir }}/templates/settings.php.j2"
+            src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
             dest: "/var/www/html/sites/default/settings.php"
 
         - name: Create staggered rsync cron job
