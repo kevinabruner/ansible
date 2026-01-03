@@ -1,6 +1,7 @@
 - name: Bake Drupal Images
   hosts: all
   gather_facts: false
+  remote_user: root  # <--- Ensure this is here
   vars_files:
     - vars.yaml
     - vault.yaml
