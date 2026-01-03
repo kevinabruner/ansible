@@ -8,16 +8,23 @@
 
   tasks:
     - name: Identify Apps and Nodes
-      run_once: true
       set_fact:
+        # 1. Get all group names from drupal hosts
+        # 2. Filter for 'repo_' groups
+        # 3. Clean the 'repo_' prefix
+        # 4. If a limit is provided, filter for apps mentioned in that limit
         app_list: >-
+          {% set all_apps = groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list %}
           {% if ansible_limit is defined %}
-          {{ groups['role_drupal'] | intersect(ansible_play_batch_all) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
+            {{ all_apps | select('in', ansible_limit) | list }}
           {% else %}
-          {{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
+            {{ all_apps }}
           {% endif %}
-          {{ apps | from_yaml }}
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
+
+    - name: Ensure app_list is a list object
+      set_fact:
+        app_list: "{{ app_list | from_yaml }}"
 
     - name: Trigger Baking Process
       include_tasks: tasks/3-bake-image-tasks.yaml
