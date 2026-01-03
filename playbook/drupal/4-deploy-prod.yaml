@@ -1,5 +1,5 @@
 - name: Deploy Prod Apps from Golden Images
-  hosts: localhost
+  hosts: all
   gather_facts: false
   vars_files:
     - vars.yaml
