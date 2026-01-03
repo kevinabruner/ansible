@@ -64,7 +64,10 @@
             - "rm -f /etc/ssh/ssh_host_*"
 
         - name: "Finalize: Stop and Template"
+          # Use the pipe | for multi-line shell scripts to avoid quote nesting hell
           shell: |
             qm shutdown {{ template_vmid }}
-            until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do sleep 5; done
-            qm template {{ template_vmid }}"
+            until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do 
+              sleep 5
+            done
+            qm template {{ template_vmid }}
