@@ -5,7 +5,6 @@
   vars_files:
     - vars.yaml
     - vault.yaml
-
   tasks:
     - name: Identify Apps and Nodes
       set_fact:

@@ -1,4 +1,4 @@
----
+
 - name: "Locate source VM {{ source_vmid }} on {{ node_item }}"
   delegate_to: "{{ node_item }}"
   shell: "qm config {{ source_vmid }}"
