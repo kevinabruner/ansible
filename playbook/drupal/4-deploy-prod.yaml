@@ -10,9 +10,12 @@
       set_fact:
         drupal_apps: "{{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
 
-    - name: Run Serial Deployment per App
+    - name: Process Serial Deployment
+      # We only trigger this once for the entire play
+      run_once: true
       include_tasks: tasks/4-deploy-prod.yaml
       loop: "{{ drupal_apps }}"
       loop_control:
         loop_var: current_app
-        label: "{{ current_app }}"
+      # This ensures that even if a Dev host is the 'leader', we don't proceed without apps
+      when: drupal_apps | length > 0
