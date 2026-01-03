@@ -1,0 +1,22 @@
+---
+- name: "Locate source VM {{ source_vmid }} on {{ node_item }}"
+  delegate_to: "{{ node_item }}"
+  shell: "qm config {{ source_vmid }}"
+  register: source_vm_check
+  failed_when: false
+  changed_when: false
+
+- name: "Perform Bake and Migrate"
+  delegate_to: "{{ node_item }}"
+  when: source_vm_check.rc == 0
+  block:
+    - name: "Clone and Migrate to PVE"
+      shell: |
+        qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
+        {% if node_item != 'pve' %}
+        qm migrate {{ template_vmid }} pve
+        {% endif %}
+    
+    - name: "Mark Bake as Complete"
+      set_fact:
+        bake_complete: true
