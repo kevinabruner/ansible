@@ -1,13 +1,17 @@
+- name: Extract repo name from groups
+  ansible.builtin.set_fact:
+    detected_repo: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
+
 - name: Rebuild Drupal Cache (drush cr)      
   ansible.builtin.command:
     cmd: /var/www/vendor/drush/drush/drush cr
   args:
     chdir: "/var/www"            
-  when: inventory_hostname == groups['repo_' + APPLICATION][0]
+  when: inventory_hostname == groups['repo_' + detected_repo][0]
   
 - name: Update Drupal (drush up)      
   ansible.builtin.command:
     cmd: /var/www/vendor/drush/drush/drush updb -y
   args:
     chdir: "/var/www"      
-  when: inventory_hostname == groups['repo_' + APPLICATION][0]
+  when: inventory_hostname == groups['repo_' + detected_repo][0]
