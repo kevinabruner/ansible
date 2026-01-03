@@ -10,7 +10,7 @@
         drupal_apps: "{{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
 
     - name: Run Serial Deployment per App
-      include_tasks: 4-deploy-prod.yaml
+      include_tasks: tasks/4-deploy-prod.yaml
       loop: "{{ drupal_apps }}"
       loop_control:
         loop_var: current_app
