@@ -1,0 +1,22 @@
+- name: Serial Rolling Deploy for Prod from golden images
+  hosts: repo_recursioncomic:&env_prod
+  vars:
+    - APPLICATION: "recursioncomic"
+  vars_files:
+    - ../../ansible/playbook/drupal/vars.yaml
+    - vault.yaml
+  serial: 1  
+  tasks:
+    - name: Deploy prod tasks from ansible 
+      import_tasks: ../../ansible/playbook/drupal/tasks/4a-deploy-prod-images.yaml
+
+- name: Update DBs after deployment
+  hosts: repo_recursioncomic:&env_prod
+  vars:
+    - APPLICATION: "recursioncomic"
+  vars_files:
+    - ../../ansible/playbook/drupal/vars.yaml
+    - vault.yaml
+  tasks:
+    - name: Refresh cache and dbs
+      import_tasks: ../../ansible/playbook/drupal/tasks/4b-update-cache-and-dbs.yaml

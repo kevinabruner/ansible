@@ -1,0 +1,9 @@
+- name: Re-deploy dev servers for fresh installation 
+  hosts: role_drupal:&env_dev
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  serial: 1  
+  tasks:
+    - name: Wipe dev tasks from ansible 
+      import_tasks: tasks/0-wipe-dev.yaml
