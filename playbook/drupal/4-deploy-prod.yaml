@@ -12,7 +12,7 @@
 
     - name: Process Serial Deployment
       run_once: true
-      include_tasks: tasks/deploy-prod-tasks.yaml
+      include_tasks: tasks/4-deploy-prod-tasks.yaml
       loop: "{{ drupal_apps }}"
       loop_control:
         loop_var: current_app

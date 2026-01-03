@@ -9,7 +9,7 @@
       set_fact:
         app_list: "{{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
     - name: Process each application template
-      include_tasks: tasks/bake-image-tasks.yaml
+      include_tasks: tasks/3-bake-image-tasks.yaml
       loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app
