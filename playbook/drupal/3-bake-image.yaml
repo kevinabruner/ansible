@@ -7,8 +7,7 @@
   tasks:
     - name: Get list of applications from groups
       set_fact:
-        app_list: "{{ groups.keys() | select('match', '^repo_') | map('replace', 'repo_', '') | list }}"
-
+        app_list: "{{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
     - name: Process each application template
       include_tasks: tasks/3a-create-template.yaml
       loop: "{{ app_list }}"

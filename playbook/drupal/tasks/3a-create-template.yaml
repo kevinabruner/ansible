@@ -6,13 +6,13 @@
         source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
         template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
-    - name: Check if the Dev VM is registered on THIS node
+    - name: Check if the Dev VM for {{ current_app }} is registered on THIS node
       shell: "/usr/sbin/qm config {{ source_vmid }}"
       register: vm_on_node
       failed_when: false
       changed_when: false
 
-    - name: Create Template if VM is found here
+    - name: Create Template for {{ current_app }} if VM is found here
       when: vm_on_node.rc == 0
       block:
         - name: Check if old template exists
@@ -20,18 +20,18 @@
           register: template_check
           failed_when: false
 
-        - name: Destroy old template
+        - name: Destroy old template for {{ current_app }}
           shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
           when: template_check.rc == 0
 
-        - name: Clone Dev VM to Golden
+        - name: Clone Dev VM for {{ current_app }} to Golden
           shell: >
             /usr/sbin/qm clone {{ source_vmid }} {{ template_vmid }} 
             --full 
             --name {{ current_app }}-golden 
             --storage truenas-nfs 
 
-        - name: Set Guest Agent
+        - name: Set Guest Agent for {{ current_app }}
           shell: "qm set {{ template_vmid }} --agent 1"
 
         - name: Create local shortcuts for VM variables
@@ -40,10 +40,10 @@
             template_name: "{{ APPLICATION }}-golden"
             template_vmid: "{{ vmid ~ '0' }}"
 
-        - name: Ensure Guest Agent is enabled on clone
+        - name: Ensure Guest Agent is enabled on clone for {{ current_app }}
           shell: "qm set {{ template_vmid }} --agent 1"
-
-        - name: Start the cloned VM
+ 
+        - name: Start the cloned VM for {{ current_app }}
           community.general.proxmox_kvm:
             api_user: "{{ proxmox_api_user }}"
             api_token_id: "{{ proxmox_token_id }}"
@@ -52,21 +52,21 @@
             vmid: "{{ template_vmid }}"
             state: started
 
-        - name: Wait for Guest Agent to respond
+        - name: Wait for Guest Agent to respond for {{ current_app }}
           shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
           register: agent_ready
           until: agent_ready.rc == 0
           retries: 20
           delay: 10
 
-        - name: Sanitize via Guest Agent
+        - name: Sanitize via Guest Agent for {{ current_app }}
           shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
           loop:
             - "cloud-init clean --logs"
             - "truncate -s 0 /etc/machine-id"
             - "rm -f /etc/ssh/ssh_host_*"
 
-        - name: Shutdown the clone
+        - name: Shutdown the clone for {{ current_app }}
           community.general.proxmox_kvm:
             api_user: "{{ proxmox_api_user }}"
             api_token_id: "{{ proxmox_token_id }}"
@@ -76,12 +76,12 @@
             state: stopped
             timeout: 300  
 
-        - name: Wait for VM to reach stopped state
+        - name: Wait for VM to reach stopped state for {{ current_app }}
           shell: "qm status {{ template_vmid }}"
           register: vm_status
           until: "'stopped' in vm_status.stdout"
           retries: 12
           delay: 5  
 
-        - name: Finalize conversion to Template
+        - name: Finalize conversion to Template for {{ current_app }}
           shell: "qm template {{ template_vmid }}"
