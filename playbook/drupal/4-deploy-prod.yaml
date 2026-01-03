@@ -1,22 +1,17 @@
-- name: Serial Rolling Deploy for Prod from golden images
-  hosts: repo_recursioncomic:&env_prod
-  vars:
-    - APPLICATION: "recursioncomic"
+- name: Deploy Prod Apps from Golden Images
+  hosts: localhost
+  gather_facts: false
   vars_files:
-    - ../../ansible/playbook/drupal/vars.yaml
+    - vars.yaml
     - vault.yaml
-  serial: 1  
   tasks:
-    - name: Deploy prod tasks from ansible 
-      import_tasks: ../../ansible/playbook/drupal/tasks/4a-deploy-prod-images.yaml
+    - name: Identify active Drupal applications
+      set_fact:
+        drupal_apps: "{{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
 
-- name: Update DBs after deployment
-  hosts: repo_recursioncomic:&env_prod
-  vars:
-    - APPLICATION: "recursioncomic"
-  vars_files:
-    - ../../ansible/playbook/drupal/vars.yaml
-    - vault.yaml
-  tasks:
-    - name: Refresh cache and dbs
-      import_tasks: ../../ansible/playbook/drupal/tasks/4b-update-cache-and-dbs.yaml
+    - name: Run Serial Deployment per App
+      include_tasks: 4-deploy-prod.yaml
+      loop: "{{ drupal_apps }}"
+      loop_control:
+        loop_var: current_app
+        label: "{{ current_app }}"
