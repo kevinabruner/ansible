@@ -1,7 +1,7 @@
 - name: "--- PREP: Identify IDs for {{ current_app }} ---"
   set_fact:
-    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] }}"
-    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] ~ '0' }}"
+    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
+    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
 - name: "--- CLEANUP: Search and Destroy old {{ current_app }} template ---"
   block:
