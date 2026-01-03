@@ -1,86 +1,69 @@
-- name: "Template Process for {{ current_app }}"
-  block:
-    - name: Identify source VM ID
-      # Look at the first dev node for this repo to get the VMID
-      set_fact:
-        source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
-        template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+- name: "--- PREP: Identify IDs for {{ current_app }} ---"
+  set_fact:
+    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] }}"
+    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] ~ '0' }}"
 
-    - name: Check if the Dev VM for {{ current_app }} is registered on THIS node
-      shell: "/usr/sbin/qm config {{ source_vmid }}"
-      register: vm_on_node
+- name: "--- CLEANUP: Search and Destroy old {{ current_app }} template ---"
+  block:
+    - name: "Check if {{ template_vmid }} exists on {{ inventory_hostname }}"
+      shell: "qm status {{ template_vmid }}"
+      register: old_template_check
       failed_when: false
       changed_when: false
 
-    - name: Create Template for {{ current_app }} if VM is found here
-      when: vm_on_node.rc == 0
-      block:
-        - name: Check if old template exists
-          shell: "/usr/sbin/qm status {{ template_vmid }}"
-          register: template_check
-          failed_when: false
+    - name: "Unlock and Destroy {{ template_vmid }} if found"
+      shell: |
+        qm unlock {{ template_vmid }} || true
+        qm destroy {{ template_vmid }} --purge
+      when: old_template_check.rc == 0
+      become: true
 
-        - name: Destroy old template for {{ current_app }}
-          shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
-          when: template_check.rc == 0
+- name: "--- SOURCE NODE: Clone and Move {{ current_app }} ---"
+  # This block only runs on the NUC that currently has the Dev VM
+  block:
+    - name: "Locate source VM {{ source_vmid }} on {{ inventory_hostname }}"
+      shell: "qm config {{ source_vmid }}"
+      register: source_vm_check
+      failed_when: false
+      changed_when: false
 
-        - name: Clone Dev VM for {{ current_app }} to Golden
-          shell: >
-            /usr/sbin/qm clone {{ source_vmid }} {{ template_vmid }} 
-            --full 
-            --name {{ current_app }}-golden 
-            --storage truenas-nfs 
+    - name: "Clone and Migrate to PVE"
+      when: source_vm_check.rc == 0
+      shell: |
+        qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
+        qm migrate {{ template_vmid }} pve
+      become: true
 
-        - name: Set Guest Agent for {{ current_app }}
-          shell: "qm set {{ template_vmid }} --agent 1"
+- name: "--- TARGET NODE (PVE): Sanitize and Template {{ current_app }} ---"
+  # This block only runs on the central 'pve' node
+  when: inventory_hostname == "pve"
+  block:
+    - name: "Wait for Migration to finish"
+      shell: "qm status {{ template_vmid }}"
+      register: pve_vm_check
+      until: pve_vm_check.rc == 0
+      retries: 30
+      delay: 5
 
-        - name: Create local shortcuts for VM variables
-          set_fact:
-            vm_app: "{{ current_app }}" 
-            template_name: "{{ current_app }}-golden"
+    - name: "Start {{ current_app }} for sanitization"
+      shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
 
-        - name: Ensure Guest Agent is enabled on clone for {{ current_app }}
-          shell: "qm set {{ template_vmid }} --agent 1"
- 
-        - name: Start the cloned VM for {{ current_app }}
-          community.general.proxmox_kvm:
-            api_user: "{{ proxmox_api_user }}"
-            api_token_id: "{{ proxmox_token_id }}"
-            api_token_secret: "{{ proxmox_token_secret }}"
-            api_host: "{{ inventory_hostname }}"
-            vmid: "{{ template_vmid }}"
-            state: started
+    - name: "Wait for Guest Agent on {{ current_app }}"
+      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
+      register: agent_ready
+      until: agent_ready.rc == 0
+      retries: 20
+      delay: 10
 
-        - name: Wait for Guest Agent to respond for {{ current_app }}
-          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
-          register: agent_ready
-          until: agent_ready.rc == 0
-          retries: 20
-          delay: 10
+    - name: "Run Sanitization Scripts"
+      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
+      loop:
+        - "cloud-init clean --logs"
+        - "truncate -s 0 /etc/machine-id"
+        - "rm -f /etc/ssh/ssh_host_*"
 
-        - name: Sanitize via Guest Agent for {{ current_app }}
-          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
-          loop:
-            - "cloud-init clean --logs"
-            - "truncate -s 0 /etc/machine-id"
-            - "rm -f /etc/ssh/ssh_host_*"
-
-        - name: Shutdown the clone for {{ current_app }}
-          community.general.proxmox_kvm:
-            api_user: "{{ proxmox_api_user }}"
-            api_token_id: "{{ proxmox_token_id }}"
-            api_token_secret: "{{ proxmox_token_secret }}"
-            api_host: "{{ inventory_hostname }}"
-            vmid: "{{ template_vmid }}"
-            state: stopped
-            timeout: 300  
-
-        - name: Wait for VM to reach stopped state for {{ current_app }}
-          shell: "qm status {{ template_vmid }}"
-          register: vm_status
-          until: "'stopped' in vm_status.stdout"
-          retries: 12
-          delay: 5  
-
-        - name: Finalize conversion to Template for {{ current_app }}
-          shell: "qm template {{ template_vmid }}"
+    - name: "Finalize: Stop and Template"
+      shell: |
+        qm shutdown {{ template_vmid }}
+        until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do sleep 5; done
+        qm template {{ template_vmid }}
