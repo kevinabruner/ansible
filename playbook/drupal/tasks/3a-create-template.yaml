@@ -36,8 +36,8 @@
 
         - name: Create local shortcuts for VM variables
           set_fact:
-            vm_app: "{{ APPLICATION }}" 
-            template_name: "{{ APPLICATION }}-golden"
+            vm_app: "{{ current_app }}" 
+            template_name: "{{ current_app }}-golden"
             template_vmid: "{{ vmid ~ '0' }}"
 
         - name: Ensure Guest Agent is enabled on clone for {{ current_app }}
