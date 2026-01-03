@@ -1,50 +1,50 @@
 - name: Build the Drupal composer files centrally
   hosts: role_drupal:&env_dev
+  gather_facts: false
   vars_files:
     - vars.yaml
   tasks:
-    - name: Identify the repository name from groups
-      ansible.builtin.set_fact:
-        repo_name: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
-
-    - name: Create dynamic per-repo groups
-      ansible.builtin.group_by:
-        key: "build_target_{{ repo_name }}"
-
-    - name: Execute Local Build
+    - name: Identify Repository and Build Locally
+      # We delegate the entire block to localhost
       delegate_to: localhost
-      when: 
-        - current_repo_group != 'none'
-        - inventory_hostname == groups['build_target_' + current_repo_group][0]
-        # ^ runs on the first member of each repo group so "one build per drupal applicaiton"
       block:
-        - name: Set local paths for this specific build
+        - name: Extract repo name from groups
           ansible.builtin.set_fact:
-            local_git_dir: "/home/kevin/{{ repo_name }}"
-        - name: Remove local build directory if it exists
+            # We look at the groups the current host belongs to
+            # and strip 'repo_' to get just 'koscinski' or 'nerdperk'
+            detected_repo: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
+          
+        - name: Create dynamic grouping for synchronization
+          ansible.builtin.group_by:
+            key: "build_ready_{{ detected_repo }}"
 
-          ansible.builtin.file:
-            path: "{{ local_git_dir }}/.build"
-            state: absent
+        - name: Run Build Block
+          # This 'when' ensures only the first VM for each repo triggers the local build
+          when: inventory_hostname == groups['repo_' + detected_repo][0]
+          block:
+            - name: Remove local build directory
+              ansible.builtin.file:
+                path: "/home/kevin/{{ detected_repo }}/.build"
+                state: absent
 
-        - name: Ensure .build directory exists locally
-          ansible.builtin.file:
-            path: "{{ local_git_dir }}/.build"
-            state: directory
-            mode: "0755"
+            - name: Ensure .build directory exists
+              ansible.builtin.file:
+                path: "/home/kevin/{{ detected_repo }}/.build"
+                state: directory
+                mode: "0755"
 
-        - name: Copy composer file locally
-          ansible.builtin.copy:
-            src: "{{ local_git_dir }}/drupal/composer.json"
-            dest: "{{ local_git_dir }}/.build/composer.json"
+            - name: Copy composer file
+              ansible.builtin.copy:
+                src: "/home/kevin/{{ detected_repo }}/drupal/composer.json"
+                dest: "/home/kevin/{{ detected_repo }}/.build/composer.json"
 
-        - name: Build composer project locally
-          community.general.composer:
-            command: install
-            working_dir: "{{ git_dir }}/.build"
-          register: composer_output
+            - name: Build composer project
+              community.general.composer:
+                command: install
+                working_dir: "/home/kevin/{{ detected_repo }}/.build"
+              register: composer_output
 
-        - name: Show composer output
-          ansible.builtin.debug:
-            var: composer_output.stdout_lines
-          when: composer_output.stdout is defined
+            - name: Show composer output
+              ansible.builtin.debug:
+                var: composer_output.stdout_lines
+              when: composer_output.stdout is defined
