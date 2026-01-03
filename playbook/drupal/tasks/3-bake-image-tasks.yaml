@@ -17,9 +17,47 @@
   loop: "{{ proxmox_nodes }}"
   loop_control:
     loop_var: node_item
-  # Skip legs and stop if we already found and cloned the VM
-  when: node_item != 'legs' and not bake_complete
+  when: 
+    - node_item != 'legs'
+    - not bake_complete
 
 - name: "SANITIZE: Finalize Template on PVE"
   delegate_to: pve
-  # ... rest of your sanitization tasks ...
+  # Added 'block:' here to satisfy the parser
+  block:
+    - name: "Wait for Migration to finish"
+      shell: "qm status {{ template_vmid }}"
+      register: pve_vm_check
+      until: pve_vm_check.rc == 0
+      retries: 30
+      delay: 5
+      when: bake_complete
+
+    - name: "Start {{ current_app }} for sanitization"
+      shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
+      when: bake_complete
+
+    - name: "Wait for Guest Agent on {{ current_app }}"
+      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
+      register: agent_ready
+      until: agent_ready.rc == 0
+      retries: 20
+      delay: 10
+      when: bake_complete
+
+    - name: "Run Sanitization Scripts"
+      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
+      loop:
+        - "cloud-init clean --logs"
+        - "truncate -s 0 /etc/machine-id"
+        - "rm -f /etc/ssh/ssh_host_*"
+      when: bake_complete
+
+    - name: "Finalize: Stop and Template"
+      shell: |
+        qm shutdown {{ template_vmid }}
+        until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do 
+          sleep 5
+        done
+        qm template {{ template_vmid }}
+      when: bake_complete
