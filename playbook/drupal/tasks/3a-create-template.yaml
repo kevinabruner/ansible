@@ -3,8 +3,8 @@
     - name: Identify source VM ID
       # Look at the first dev node for this repo to get the VMID
       set_fact:
-        source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] }}"
-        template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] ~ '0' }}"
+        source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
+        template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
     - name: Check if the Dev VM is registered on THIS node
       shell: "/usr/sbin/qm config {{ source_vmid }}"
