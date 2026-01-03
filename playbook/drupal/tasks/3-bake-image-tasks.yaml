@@ -1,54 +1,42 @@
-- name: "Iterate through Apps and Proxmox Nodes"
-  # This loop crosses the apps from your limit with your PVE hosts
-  loop: "{{ q('nested', app_list, proxmox_nodes) }}"
-  loop_control:
-    loop_var: nested_item
-  delegate_to: "{{ nested_item[1] }}"
-  vars:
+# We define our variables from the nested_item passed by the loop above
+- name: "Set loop variables"
+  set_fact:
     current_app: "{{ nested_item[0] }}"
     current_node: "{{ nested_item[1] }}"
+    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
+    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+
+- name: "Processing {{ current_app }} on {{ current_node }}"
+  delegate_to: "{{ current_node }}"
   block:
-    - name: "PREP: Identify IDs for {{ current_app }}"
-      set_fact:
-        # Pulls the VMID from the first host in the app group
-        source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
-        template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+    - name: "CLEANUP: Check if {{ template_vmid }} exists on {{ current_node }}"
+      shell: "qm status {{ template_vmid }}"
+      register: old_template_check
+      failed_when: false
+      changed_when: false
 
-    - name: "CLEANUP: Search and Destroy old {{ current_app }} template"
-      # We check every node to ensure no stale template IDs exist anywhere
-      block:
-        - name: "Check if {{ template_vmid }} exists on {{ current_node }}"
-          shell: "qm status {{ template_vmid }}"
-          register: old_template_check
-          failed_when: false
-          changed_when: false
+    - name: "CLEANUP: Unlock and Destroy {{ template_vmid }} if found"
+      shell: |
+        qm unlock {{ template_vmid }} || true
+        qm destroy {{ template_vmid }} --purge
+      when: old_template_check.rc == 0
 
-        - name: "Unlock and Destroy {{ template_vmid }} if found"
-          shell: |
-            qm unlock {{ template_vmid }} || true
-            qm destroy {{ template_vmid }} --purge
-          when: old_template_check.rc == 0
+    - name: "SOURCE: Locate source VM {{ source_vmid }} on {{ current_node }}"
+      shell: "qm config {{ source_vmid }}"
+      register: source_vm_check
+      failed_when: false
+      changed_when: false
 
-    - name: "SOURCE NODE: Clone and Move {{ current_app }}"
-      block:
-        - name: "Locate source VM {{ source_vmid }} on {{ current_node }}"
-          shell: "qm config {{ source_vmid }}"
-          register: source_vm_check
-          failed_when: false
-          changed_when: false
+    - name: "SOURCE: Clone and Move {{ current_app }}"
+      when: source_vm_check.rc == 0
+      shell: |
+        qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
+        {% if current_node != 'pve' %}
+        qm migrate {{ template_vmid }} pve
+        {% endif %}
 
-        - name: "Clone and Migrate to PVE"
-          # This ONLY executes on the node (nuc1, nuc2, etc) where the VM is found
-          when: source_vm_check.rc == 0
-          shell: |
-            qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
-            # If we aren't already on PVE, move it there
-            {% if current_node != 'pve' %}
-            qm migrate {{ template_vmid }} pve
-            {% endif %}
-
-    - name: "TARGET NODE (PVE): Sanitize and Template {{ current_app }}"
-      # This block ONLY runs on the central pve node for the current app iteration
+    - name: "TARGET (PVE): Sanitize and Template {{ current_app }}"
+      # This part only runs during the specific iteration where the node is PVE
       when: current_node == "pve"
       block:
         - name: "Wait for Migration to finish"

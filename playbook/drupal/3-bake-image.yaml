@@ -13,13 +13,10 @@
         app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
-    - name: Fail if no apps matched the limit
-      run_once: true
-      fail:
-        msg: "No Drupal apps found matching your limit."
-      when: app_list | length == 0
-
     - name: Trigger Baking Process
-      run_once: true
       include_tasks: tasks/3-bake-image-tasks.yaml
-      # We no longer loop or delegate here!
+      # We loop through the combinations here
+      loop: "{{ q('nested', app_list, proxmox_nodes) }}"
+      loop_control:
+        loop_var: nested_item
+      run_once: true
