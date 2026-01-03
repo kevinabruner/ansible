@@ -1,38 +1,40 @@
-- name: Phase 1 - Filter Apps based on Limit
+- name: Bake Drupal Images
   hosts: all
   gather_facts: false
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+
   tasks:
-    - name: Determine which apps are in scope
+    - name: Identify Apps from Limit
       run_once: true
       set_fact:
-        # Intersect the limit with our Drupal role to get the app list
-        active_drupal_apps: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
-      # Save this list to a dummy host so the next play can see it
-      add_host:
-        name: "APP_HOLDER"
-        apps: "{{ active_drupal_apps }}"
+        # Pull app names by looking at what survived the --limit
+        app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
 
-    - name: Phase 2 - Bake Images on Proxmox Nodes
-      # Now we target the Proxmox nodes directly. 
-      # This play will run as long as you don't limit out the Proxmox nodes.
-      hosts: role_proxmox_host:!legs
+    - name: Identify Proxmox Target Nodes
+      run_once: true
+      set_fact:
+        # We manually pull the PVE nodes from the inventory group regardless of the limit
+        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
+
+    - name: Fail if no apps matched the limit
+      run_once: true
+      fail:
+        msg: "No Drupal apps found matching your limit. Check your spelling!"
+      when: app_list | length == 0
+
+    - name: Process App Templates on Proxmox Nodes
+      # This is the magic part:
+      # We loop through the apps, but we FORCE each task to run on the PVE nodes
+      include_tasks: tasks/3-bake-image-tasks.yaml
+      loop: "{{ q('nested', app_list, proxmox_nodes) }}"
+      loop_control:
+        loop_var: nested_item
+      vars:
+        current_app: "{{ nested_item[0] }}"
+        # We tell the tasks inside to run on the PVE node from the loop
+        ansible_host: "{{ hostvars[nested_item[1]].ansible_host | default(nested_item[1]) }}"
+      delegate_to: "{{ nested_item[1] }}"
+      # remote_user must be root for qm commands on PVE
       remote_user: root
-      gather_facts: false
-      vars_files:
-        - vars.yaml
-        - vault.yaml
-      
-      tasks:
-        - name: Fail if no apps were found in limit
-          meta: end_play
-          when: hostvars['APP_HOLDER']['apps'] | length == 0
-
-        - name: "Status: Baking templates for {{ hostvars['APP_HOLDER']['apps'] | join(', ') }}"
-          debug:
-            msg: "Executing on Proxmox Node: {{ inventory_hostname }}"
-
-        - name: Process each application template
-          include_tasks: tasks/3-bake-image-tasks.yaml
-          loop: "{{ hostvars['APP_HOLDER']['apps'] }}"
-          loop_control:
-            loop_var: current_app
