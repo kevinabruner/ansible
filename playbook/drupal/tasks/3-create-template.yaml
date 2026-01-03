@@ -1,9 +1,9 @@
-- name: "--- PREP: Identify IDs for {{ current_app }} ---"
+- name: PREP: Identify IDs for {{ current_app }}"
   set_fact:
     source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
-- name: "--- CLEANUP: Search and Destroy old {{ current_app }} template ---"
+- name: CLEANUP: Search and Destroy old {{ current_app }} template"
   block:
     - name: "Check if {{ template_vmid }} exists on {{ inventory_hostname }}"
       shell: "qm status {{ template_vmid }}"
@@ -18,7 +18,7 @@
       when: old_template_check.rc == 0
       become: true
 
-- name: "--- SOURCE NODE: Clone and Move {{ current_app }} ---"
+- name: SOURCE NODE: Clone and Move {{ current_app }}"
   # This block only runs on the NUC that currently has the Dev VM
   block:
     - name: "Locate source VM {{ source_vmid }} on {{ inventory_hostname }}"
@@ -34,7 +34,7 @@
         qm migrate {{ template_vmid }} pve
       become: true
 
-- name: "--- TARGET NODE (PVE): Sanitize and Template {{ current_app }} ---"
+- name: TARGET NODE (PVE): Sanitize and Template {{ current_app }} "
   # This block only runs on the central 'pve' node
   when: inventory_hostname == "pve"
   block:
