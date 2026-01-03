@@ -1,17 +1,17 @@
 - name: Bake Drupal Images
-  hosts: localhost
+  # This ensures localhost is ALWAYS included, even if you --limit to something else
+  hosts: localhost,all 
   gather_facts: false
-  remote_user: root
   vars_files:
     - vars.yaml
     - vault.yaml
+
   tasks:
     - name: Identify Apps and Nodes
+      # We only want this to run once on the localhost controller
+      run_once: true
+      delegate_to: localhost
       set_fact:
-        # 1. Get all group names from drupal hosts
-        # 2. Filter for 'repo_' groups
-        # 3. Clean the 'repo_' prefix
-        # 4. If a limit is provided, filter for apps mentioned in that limit
         app_list: >-
           {% set all_apps = groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list %}
           {% if ansible_limit is defined %}
@@ -22,12 +22,15 @@
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
     - name: Ensure app_list is a list object
+      run_once: true
+      delegate_to: localhost
       set_fact:
         app_list: "{{ app_list | from_yaml }}"
 
     - name: Trigger Baking Process
+      # Only the localhost 'instance' of this play should trigger the includes
       include_tasks: tasks/3-bake-image-tasks.yaml
       loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app
-      run_once: true
+      when: inventory_hostname == 'localhost'
