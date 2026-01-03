@@ -4,6 +4,7 @@
   vars_files:
     - vars.yaml
     - vault.yaml
+    - /home/kevin/db-server/playbook/vault.yml
   tasks:
     - name: Identify active Drupal applications
       set_fact:
