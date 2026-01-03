@@ -4,6 +4,8 @@
   args:
     chdir: "/var/www"            
   run_once: true
+  become: true
+  become_user: www-data
 
 - name: Update Drupal (drush up)      
   ansible.builtin.command:
@@ -11,3 +13,5 @@
   args:
     chdir: "/var/www"      
   run_once: true
+  become: true
+  become_user: www-data
