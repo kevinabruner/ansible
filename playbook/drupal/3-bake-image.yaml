@@ -1,28 +1,39 @@
 - name: Create Production Templates
-  # This targets the Proxmox hosts regardless of your --limit
-  hosts: role_proxmox_host:!legs
+  hosts: all
   gather_facts: false
+  # We still want to run as root on the Proxmox nodes
   remote_user: root  
   vars_files:
     - vars.yaml
     - vault.yaml
+
   tasks:
-    - name: Get list of applications from the --limit flag
+    - name: Identify Apps and Proxmox Nodes
       run_once: true
       set_fact:
-        # We look at ALL hosts in role_drupal, but only those matching the current limit
-        # 'ansible_limit_hosts' contains the hosts passed via --limit
-        app_list: "{{ groups['role_drupal'] | intersect(ansible_limit_hosts | default(groups['role_drupal'])) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+        # 1. Get the app list based on the limit
+        # intersect(ansible_play_batch) ensures it only sees hosts allowed by --limit
+        app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+        
+        # 2. Identify the Proxmox hosts (since they might be excluded by the limit)
+        # We pull these directly from the inventory groups, ignoring the limit
+        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
-    - name: "DEBUG - Apps to be baked"
+    - name: "Status: Baking templates for {{ app_list | join(', ') }}"
       run_once: true
-      ansible.builtin.debug:
-        msg: "Limit detected. Baking templates for: {{ app_list }}"
+      debug:
+        msg: "Targeting Proxmox Nodes: {{ proxmox_nodes }}"
+      when: app_list | length > 0
 
-    - name: Process each application template
-      # We still want the Proxmox hosts to loop through the apps
+    - name: Execute Baking Tasks on Proxmox Nodes
+      # This is the "magic" - we loop the apps, but run them on Proxmox nodes
       include_tasks: tasks/3-bake-image-tasks.yaml
       loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app
+      # We delegate the task to each Proxmox node one by one
+      delegate_to: "{{ item }}"
+      loop: "{{ proxmox_nodes }}"
+      # Note: Since we are doing a double-loop (Apps + Nodes), 
+      # it's cleaner to handle the Node loop inside the include or via a product
       when: app_list | length > 0
