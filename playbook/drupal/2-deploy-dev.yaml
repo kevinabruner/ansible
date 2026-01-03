@@ -1,5 +1,5 @@
 - name: Parallel Deploy for Dev
-  hosts: repo_recursioncomic:&env_dev
+  hosts: role_drupal:&env_dev
   vars_files:
     - vars.yaml
     - vault.yaml
