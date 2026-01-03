@@ -82,7 +82,7 @@
     state: directory
   become: true
 
-- name: Sync web and vendor directories
+- name: Sync web directories
   # Using synchronize requires rsync on both ends
   ansible.posix.synchronize:
     src: "{{ item.src }}"
@@ -91,7 +91,6 @@
     rsync_opts: "{{ item.opts | default([]) }}"
   loop:
     - { src: "{{ git_dir }}/.build/html/", dest: "/var/www/html/", opts: ["--exclude=sites/default/files", "--exclude=sites/default/settings.php"] }
-    - { src: "{{ git_dir }}/.build/vendor/", dest: "/var/www/vendor/" }
   become: true
 
 - name: Sync vendor directory
