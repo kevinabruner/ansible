@@ -1,40 +1,37 @@
 - name: Bake Drupal Images
   hosts: all
   gather_facts: false
+  # Define root here so it applies to delegated tasks
+  remote_user: root
   vars_files:
     - vars.yaml
     - vault.yaml
 
   tasks:
-    - name: Identify Apps from Limit
+    - name: Identify Apps and Nodes
       run_once: true
-      set_fact:
-        # Pull app names by looking at what survived the --limit
-        app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+      block:
+        - name: Identify Apps from Limit
+          set_fact:
+            app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
 
-    - name: Identify Proxmox Target Nodes
-      run_once: true
-      set_fact:
-        # We manually pull the PVE nodes from the inventory group regardless of the limit
-        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
+        - name: Identify Proxmox Target Nodes
+          set_fact:
+            proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
-    - name: Fail if no apps matched the limit
-      run_once: true
-      fail:
-        msg: "No Drupal apps found matching your limit. Check your spelling!"
-      when: app_list | length == 0
+        - name: Fail if no apps matched the limit
+          fail:
+            msg: "No Drupal apps found matching your limit."
+          when: app_list | length == 0
 
     - name: Process App Templates on Proxmox Nodes
-      # This is the magic part:
-      # We loop through the apps, but we FORCE each task to run on the PVE nodes
+      # We use a block to group the delegation and the loop
       include_tasks: tasks/3-bake-image-tasks.yaml
+      # Use the nested loop to hit every PVE node for every app in the limit
       loop: "{{ q('nested', app_list, proxmox_nodes) }}"
       loop_control:
         loop_var: nested_item
       vars:
         current_app: "{{ nested_item[0] }}"
-        # We tell the tasks inside to run on the PVE node from the loop
-        ansible_host: "{{ hostvars[nested_item[1]].ansible_host | default(nested_item[1]) }}"
-      delegate_to: "{{ nested_item[1] }}"
-      # remote_user must be root for qm commands on PVE
-      remote_user: root
+        target_pve_node: "{{ nested_item[1] }}"
+      delegate_to: "{{ target_pve_node }}"
