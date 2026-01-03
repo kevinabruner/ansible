@@ -1,73 +1,53 @@
-# We define our variables from the nested_item passed by the loop above
-- name: "Set loop variables"
+---
+- name: "PREP: Identify IDs for {{ current_app }} on {{ current_node }}"
   set_fact:
-    current_app: "{{ nested_item[0] }}"
-    current_node: "{{ nested_item[1] }}"
     source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
-- name: "Processing {{ current_app }} on {{ current_node }}"
-  delegate_to: "{{ current_node }}"
+- name: "GLOBAL CLEANUP: Ensure {{ template_vmid }} is gone from PVE"
+  # We delegate this specifically to PVE because that is where templates live
+  delegate_to: pve
   block:
-    - name: "CLEANUP: Check if {{ template_vmid }} exists on {{ current_node }}"
+    - name: "Check if {{ template_vmid }} exists on PVE"
       shell: "qm status {{ template_vmid }}"
-      register: old_template_check
+      register: pve_template_check
       failed_when: false
       changed_when: false
 
-    - name: "CLEANUP: Unlock and Destroy {{ template_vmid }} if found"
+    - name: "Destroy existing template on PVE"
       shell: |
         qm unlock {{ template_vmid }} || true
         qm destroy {{ template_vmid }} --purge
-      when: old_template_check.rc == 0
+      when: pve_template_check.rc == 0
 
-    - name: "SOURCE: Locate source VM {{ source_vmid }} on {{ current_node }}"
+- name: "LOCAL CLEANUP: Ensure {{ template_vmid }} is gone from {{ current_node }}"
+  # Now we check the current node in the loop to prevent the "File exists" error
+  delegate_to: "{{ current_node }}"
+  when: current_node != 'pve'
+  block:
+    - name: "Check if {{ template_vmid }} exists on {{ current_node }}"
+      shell: "qm status {{ template_vmid }}"
+      register: local_template_check
+      failed_when: false
+      changed_when: false
+
+    - name: "Destroy existing VM on {{ current_node }}"
+      shell: "qm destroy {{ template_vmid }} --purge"
+      when: local_template_check.rc == 0
+
+- name: "SOURCE: Clone and Move {{ current_app }}"
+  delegate_to: "{{ current_node }}"
+  block:
+    - name: "Locate source VM {{ source_vmid }} on {{ current_node }}"
       shell: "qm config {{ source_vmid }}"
       register: source_vm_check
       failed_when: false
       changed_when: false
 
-    - name: "SOURCE: Clone and Move {{ current_app }}"
+    - name: "Clone and Migrate"
       when: source_vm_check.rc == 0
       shell: |
         qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
         {% if current_node != 'pve' %}
         qm migrate {{ template_vmid }} pve
         {% endif %}
-
-    - name: "TARGET (PVE): Sanitize and Template {{ current_app }}"
-      # This part only runs during the specific iteration where the node is PVE
-      when: current_node == "pve"
-      block:
-        - name: "Wait for Migration to finish"
-          shell: "qm status {{ template_vmid }}"
-          register: pve_vm_check
-          until: pve_vm_check.rc == 0
-          retries: 30
-          delay: 5
-
-        - name: "Start {{ current_app }} for sanitization"
-          shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
-
-        - name: "Wait for Guest Agent on {{ current_app }}"
-          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
-          register: agent_ready
-          until: agent_ready.rc == 0
-          retries: 20
-          delay: 10
-
-        - name: "Run Sanitization Scripts"
-          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
-          loop:
-            - "cloud-init clean --logs"
-            - "truncate -s 0 /etc/machine-id"
-            - "rm -f /etc/ssh/ssh_host_*"
-
-        - name: "Finalize: Stop and Template"
-          # Use the pipe | for multi-line shell scripts to avoid quote nesting hell
-          shell: |
-            qm shutdown {{ template_vmid }}
-            until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do 
-              sleep 5
-            done
-            qm template {{ template_vmid }}
