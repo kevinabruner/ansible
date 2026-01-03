@@ -12,27 +12,27 @@
         name: "APP_HOLDER"
         apps: "{{ active_drupal_apps }}"
 
-- name: Phase 2 - Bake Images on Proxmox Nodes
-  # Now we target the Proxmox nodes directly. 
-  # This play will run as long as you don't limit out the Proxmox nodes.
-  hosts: role_proxmox_host:!legs
-  remote_user: root
-  gather_facts: false
-  vars_files:
-    - vars.yaml
-    - vault.yaml
-  
-  tasks:
-    - name: Fail if no apps were found in limit
-      meta: end_play
-      when: hostvars['APP_HOLDER']['apps'] | length == 0
+    - name: Phase 2 - Bake Images on Proxmox Nodes
+      # Now we target the Proxmox nodes directly. 
+      # This play will run as long as you don't limit out the Proxmox nodes.
+      hosts: role_proxmox_host:!legs
+      remote_user: root
+      gather_facts: false
+      vars_files:
+        - vars.yaml
+        - vault.yaml
+      
+      tasks:
+        - name: Fail if no apps were found in limit
+          meta: end_play
+          when: hostvars['APP_HOLDER']['apps'] | length == 0
 
-    - name: "Status: Baking templates for {{ hostvars['APP_HOLDER']['apps'] | join(', ') }}"
-      debug:
-        msg: "Executing on Proxmox Node: {{ inventory_hostname }}"
+        - name: "Status: Baking templates for {{ hostvars['APP_HOLDER']['apps'] | join(', ') }}"
+          debug:
+            msg: "Executing on Proxmox Node: {{ inventory_hostname }}"
 
-    - name: Process each application template
-      include_tasks: tasks/3-bake-image-tasks.yaml
-      loop: "{{ hostvars['APP_HOLDER']['apps'] }}"
-      loop_control:
-        loop_var: current_app
+        - name: Process each application template
+          include_tasks: tasks/3-bake-image-tasks.yaml
+          loop: "{{ hostvars['APP_HOLDER']['apps'] }}"
+          loop_control:
+            loop_var: current_app
