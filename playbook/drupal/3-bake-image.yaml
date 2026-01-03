@@ -1,6 +1,6 @@
 - name: Bake Drupal Images
-  # This ensures localhost is ALWAYS included, even if you --limit to something else
-  hosts: localhost,all 
+  # Using 'all' but ensuring localhost is always targeted as the orchestrator
+  hosts: all
   gather_facts: false
   vars_files:
     - vars.yaml
@@ -8,8 +8,8 @@
 
   tasks:
     - name: Identify Apps and Nodes
-      # We only want this to run once on the localhost controller
       run_once: true
+      # We delegate to localhost so the variable is stored on the control node
       delegate_to: localhost
       set_fact:
         app_list: >-
@@ -28,9 +28,10 @@
         app_list: "{{ app_list | from_yaml }}"
 
     - name: Trigger Baking Process
-      # Only the localhost 'instance' of this play should trigger the includes
+      run_once: true
+      # Run the logic specifically from the localhost context
+      delegate_to: localhost
       include_tasks: tasks/3-bake-image-tasks.yaml
-      loop: "{{ app_list }}"
+      loop: "{{ hostvars['localhost']['app_list'] }}"
       loop_control:
         loop_var: current_app
-      when: inventory_hostname == 'localhost'
