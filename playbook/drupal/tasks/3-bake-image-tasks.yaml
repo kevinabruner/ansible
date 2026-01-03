@@ -3,6 +3,7 @@
   set_fact:
     source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+    bake_complete: false
 
 - name: "GLOBAL CLEANUP: Ensure {{ template_vmid }} is gone from PVE"
   delegate_to: pve
@@ -11,46 +12,14 @@
     qm destroy {{ template_vmid }} --purge || true
   failed_when: false
 
-- name: "SEARCH & BAKE: Locate and Clone {{ current_app }}"
-  # We loop through Proxmox nodes here to find the VM
-  delegate_to: "{{ item }}"
+- name: "SEARCH & BAKE: Find VM across nodes"
+  include_tasks: 3-bake-search-logic.yaml
   loop: "{{ proxmox_nodes }}"
-  # Skip 'legs' and avoid redundant checks if we already finished the clone
-  when: item != 'legs' and (bake_complete is not defined or not bake_complete)
-  block:
-    - name: "Locate source VM {{ source_vmid }} on {{ item }}"
-      shell: "qm config {{ source_vmid }}"
-      register: source_vm_check
-      failed_when: false
-      changed_when: false
-
-    - name: "Perform Bake and Migrate"
-      when: source_vm_check.rc == 0
-      block:
-        - name: "Clone and Migrate to PVE"
-          shell: |
-            qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
-            {% if item != 'pve' %}
-            qm migrate {{ template_vmid }} pve
-            {% endif %}
-        
-        - name: "Mark Bake as Complete"
-          set_fact:
-            bake_complete: true
+  loop_control:
+    loop_var: node_item
+  # Skip legs and stop if we already found and cloned the VM
+  when: node_item != 'legs' and not bake_complete
 
 - name: "SANITIZE: Finalize Template on PVE"
   delegate_to: pve
-  # We only run this once per app
-  block:
-    - name: "Wait for Migration to finish"
-      shell: "qm status {{ template_vmid }}"
-      register: pve_vm_check
-      until: pve_vm_check.rc == 0
-      retries: 30
-      delay: 5
-
-    # ... insert your Start, Guest Exec Sanitization, and Template tasks here ...
-
-    - name: "Reset Bake State for next app"
-      set_fact:
-        bake_complete: false
+  # ... rest of your sanitization tasks ...
