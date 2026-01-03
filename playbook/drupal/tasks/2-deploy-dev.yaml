@@ -1,5 +1,3 @@
-
-
 - name: Install apt packages
   apt:
     update_cache: yes
@@ -22,6 +20,10 @@
     - qemu-guest-agent
     - ceph-common
   become: true
+
+- name: Identify Repository/Application
+  ansible.builtin.set_fact:
+    APPLICATION: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
 
 - name: Enable and stop apache2 and qemu 
   ansible.builtin.service:
@@ -115,10 +117,6 @@
 - name:  enable haproxy-target site
   become: true
   command: a2ensite haproxy-target
-
-- name: Identify Repository/Application
-  ansible.builtin.set_fact:
-    APPLICATION: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
 
 - name: Copy php settings file
   become: true
