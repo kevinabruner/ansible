@@ -12,11 +12,6 @@
       args:
         chdir: "/home/kevin/terraform"
 
-    - name: "Clear old SSH host key for {{ target_host }}"
-      delegate_to: localhost
-      shell: "ssh-keygen -f ~/.ssh/known_hosts -R {{ hostvars[target_host].ansible_host }}"
-      ignore_errors: true
-
     - name: "Wait for {{ target_host }} to be SSH-ready"
       delegate_to: localhost
       wait_for:
