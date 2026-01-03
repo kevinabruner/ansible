@@ -1,69 +1,82 @@
-- name: PREP: Identify IDs for {{ current_app }}"
-  set_fact:
-    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
-    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
-
-- name: CLEANUP: Search and Destroy old {{ current_app }} template"
+- name: "Iterate through Apps and Proxmox Nodes"
+  # This loop crosses the apps from your limit with your PVE hosts
+  loop: "{{ q('nested', app_list, proxmox_nodes) }}"
+  loop_control:
+    loop_var: nested_item
+  delegate_to: "{{ nested_item[1] }}"
+  vars:
+    current_app: "{{ nested_item[0] }}"
+    current_node: "{{ nested_item[1] }}"
   block:
-    - name: "Check if {{ template_vmid }} exists on {{ inventory_hostname }}"
-      shell: "qm status {{ template_vmid }}"
-      register: old_template_check
-      failed_when: false
-      changed_when: false
+    - name: "PREP: Identify IDs for {{ current_app }}"
+      set_fact:
+        # Pulls the VMID from the first host in the app group
+        source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
+        template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
-    - name: "Unlock and Destroy {{ template_vmid }} if found"
-      shell: |
-        qm unlock {{ template_vmid }} || true
-        qm destroy {{ template_vmid }} --purge
-      when: old_template_check.rc == 0
-      become: true
+    - name: "CLEANUP: Search and Destroy old {{ current_app }} template"
+      # We check every node to ensure no stale template IDs exist anywhere
+      block:
+        - name: "Check if {{ template_vmid }} exists on {{ current_node }}"
+          shell: "qm status {{ template_vmid }}"
+          register: old_template_check
+          failed_when: false
+          changed_when: false
 
-- name: SOURCE NODE: Clone and Move {{ current_app }}"
-  # This block only runs on the NUC that currently has the Dev VM
-  block:
-    - name: "Locate source VM {{ source_vmid }} on {{ inventory_hostname }}"
-      shell: "qm config {{ source_vmid }}"
-      register: source_vm_check
-      failed_when: false
-      changed_when: false
+        - name: "Unlock and Destroy {{ template_vmid }} if found"
+          shell: |
+            qm unlock {{ template_vmid }} || true
+            qm destroy {{ template_vmid }} --purge
+          when: old_template_check.rc == 0
 
-    - name: "Clone and Migrate to PVE"
-      when: source_vm_check.rc == 0
-      shell: |
-        qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
-        qm migrate {{ template_vmid }} pve
-      become: true
+    - name: "SOURCE NODE: Clone and Move {{ current_app }}"
+      block:
+        - name: "Locate source VM {{ source_vmid }} on {{ current_node }}"
+          shell: "qm config {{ source_vmid }}"
+          register: source_vm_check
+          failed_when: false
+          changed_when: false
 
-- name: TARGET NODE (PVE): Sanitize and Template {{ current_app }} "
-  # This block only runs on the central 'pve' node
-  when: inventory_hostname == "pve"
-  block:
-    - name: "Wait for Migration to finish"
-      shell: "qm status {{ template_vmid }}"
-      register: pve_vm_check
-      until: pve_vm_check.rc == 0
-      retries: 30
-      delay: 5
+        - name: "Clone and Migrate to PVE"
+          # This ONLY executes on the node (nuc1, nuc2, etc) where the VM is found
+          when: source_vm_check.rc == 0
+          shell: |
+            qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
+            # If we aren't already on PVE, move it there
+            {% if current_node != 'pve' %}
+            qm migrate {{ template_vmid }} pve
+            {% endif %}
 
-    - name: "Start {{ current_app }} for sanitization"
-      shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
+    - name: "TARGET NODE (PVE): Sanitize and Template {{ current_app }}"
+      # This block ONLY runs on the central pve node for the current app iteration
+      when: current_node == "pve"
+      block:
+        - name: "Wait for Migration to finish"
+          shell: "qm status {{ template_vmid }}"
+          register: pve_vm_check
+          until: pve_vm_check.rc == 0
+          retries: 30
+          delay: 5
 
-    - name: "Wait for Guest Agent on {{ current_app }}"
-      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
-      register: agent_ready
-      until: agent_ready.rc == 0
-      retries: 20
-      delay: 10
+        - name: "Start {{ current_app }} for sanitization"
+          shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
 
-    - name: "Run Sanitization Scripts"
-      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
-      loop:
-        - "cloud-init clean --logs"
-        - "truncate -s 0 /etc/machine-id"
-        - "rm -f /etc/ssh/ssh_host_*"
+        - name: "Wait for Guest Agent on {{ current_app }}"
+          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
+          register: agent_ready
+          until: agent_ready.rc == 0
+          retries: 20
+          delay: 10
 
-    - name: "Finalize: Stop and Template"
-      shell: |
-        qm shutdown {{ template_vmid }}
-        until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do sleep 5; done
-        qm template {{ template_vmid }}
+        - name: "Run Sanitization Scripts"
+          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
+          loop:
+            - "cloud-init clean --logs"
+            - "truncate -s 0 /etc/machine-id"
+            - "rm -f /etc/ssh/ssh_host_*"
+
+        - name: "Finalize: Stop and Template"
+          shell: |
+            qm shutdown {{ template_vmid }}
+            until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do sleep 5; done
+            qm template {{ template_vmid }}"

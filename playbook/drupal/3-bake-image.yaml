@@ -1,7 +1,6 @@
 - name: Bake Drupal Images
   hosts: all
   gather_facts: false
-  # Define root here so it applies to delegated tasks
   remote_user: root
   vars_files:
     - vars.yaml
@@ -10,28 +9,17 @@
   tasks:
     - name: Identify Apps and Nodes
       run_once: true
-      block:
-        - name: Identify Apps from Limit
-          set_fact:
-            app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+      set_fact:
+        app_list: "{{ groups['role_drupal'] | intersect(ansible_play_batch) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
-        - name: Identify Proxmox Target Nodes
-          set_fact:
-            proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
+    - name: Fail if no apps matched the limit
+      run_once: true
+      fail:
+        msg: "No Drupal apps found matching your limit."
+      when: app_list | length == 0
 
-        - name: Fail if no apps matched the limit
-          fail:
-            msg: "No Drupal apps found matching your limit."
-          when: app_list | length == 0
-
-    - name: Process App Templates on Proxmox Nodes
-      # We use a block to group the delegation and the loop
+    - name: Trigger Baking Process
+      run_once: true
       include_tasks: tasks/3-bake-image-tasks.yaml
-      # Use the nested loop to hit every PVE node for every app in the limit
-      loop: "{{ q('nested', app_list, proxmox_nodes) }}"
-      loop_control:
-        loop_var: nested_item
-      vars:
-        current_app: "{{ nested_item[0] }}"
-        target_pve_node: "{{ nested_item[1] }}"
-      delegate_to: "{{ target_pve_node }}"
+      # We no longer loop or delegate here!
