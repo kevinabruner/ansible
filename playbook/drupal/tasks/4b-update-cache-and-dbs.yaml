@@ -3,11 +3,11 @@
     cmd: /var/www/vendor/drush/drush/drush cr
   args:
     chdir: "/var/www"            
-  run_once: true
-
+  when: inventory_hostname == groups['repo_' + APPLICATION][0]
+  
 - name: Update Drupal (drush up)      
   ansible.builtin.command:
     cmd: /var/www/vendor/drush/drush/drush updb -y
   args:
     chdir: "/var/www"      
-  run_once: true
+  when: inventory_hostname == groups['repo_' + APPLICATION][0]
