@@ -5,7 +5,7 @@
         APPLICATION: "{{ current_app }}"
 
     - name: "Force Terraform to recreate {{ target_host }}"
-      delegate_to: localhost
+      delegate_to: terraform
       shell: |
         terraform taint 'module.{{ target_host }}.proxmox_vm_qemu.{{ target_host }}[0]'
         terraform apply -target='module.{{ target_host }}.proxmox_vm_qemu.{{ target_host }}[0]' -auto-approve
