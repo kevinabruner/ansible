@@ -11,7 +11,7 @@
       run_once: true
       set_fact:
         # We use ansible_play_batch here because it respects your --limit perfectly
-        app_list: "{{ ansible_play_batch | intersect(groups['env_prod']) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+        app_list: "{{ ansible_play_batch | intersect(groups['role_drupal']) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
     - name: Trigger Baking Process
