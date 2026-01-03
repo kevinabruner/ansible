@@ -1,4 +1,5 @@
 ANSIBLE_USER: kevin
+APPLICATION: "{{ hostvars[target_vm]['custom_fields']['repos'] }}"
 git_dir: /home/{{ ANSIBLE_USER }}/{{ APPLICATION }}
 netbox_dns: netbox.thejfk.ca
 INTERFACE: eth0
