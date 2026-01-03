@@ -135,10 +135,17 @@
         
 - name: Check if source themes exist locally
   delegate_to: localhost
-  run_once: true
   ansible.builtin.stat:
     path: "{{ git_dir }}/drupal/themes/"
   register: local_themes
+  when: inventory_hostname == groups['repo_' + APPLICATION][0]
+
+- name: Copy theme(s)
+  ansible.builtin.copy:
+    src: "{{ git_dir }}/drupal/themes/"
+    dest: "/var/www/html/themes/contrib/"
+  when: 
+    - hostvars[groups['repo_' + APPLICATION][0]]['local_themes']['stat']['exists'] | default(false)
 
 - name: Copy theme(s)
   ansible.builtin.copy:
