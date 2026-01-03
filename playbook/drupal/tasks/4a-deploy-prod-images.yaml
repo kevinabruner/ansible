@@ -47,7 +47,7 @@
             # Calculate offset based on host index in the specific app group
             hour: "{{ (3 + groups['repo_' + current_app].index(target_host)) % 24 }}"
             minute: "0"
-            job: "rsync -az --delete {{ hostvars[target_host].ceph_target_dir }}/ {{ hostvars[target_host].nfs_target_dir }}/"
+            job: "rsync -az --delete {{ ceph_target_dir }} / {{ nfs_target_dir }}/"
             user: root
 
         - name: Start apache 
