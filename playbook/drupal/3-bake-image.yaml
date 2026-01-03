@@ -15,11 +15,7 @@
 
     - name: Trigger Baking Process
       include_tasks: tasks/3-bake-image-tasks.yaml
-      loop: "{{ q('nested', app_list, proxmox_nodes) }}"
+      loop: "{{ app_list }}"
       loop_control:
-        loop_var: nested_item
-      vars:
-        # Define these here so they are available immediately in the task file
-        current_app: "{{ nested_item[0] }}"
-        current_node: "{{ nested_item[1] }}"
+        loop_var: current_app
       run_once: true

@@ -1,53 +1,56 @@
 ---
-- name: "PREP: Identify IDs for {{ current_app }} on {{ current_node }}"
+- name: "PREP: Identify IDs for {{ current_app }}"
   set_fact:
     source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
 - name: "GLOBAL CLEANUP: Ensure {{ template_vmid }} is gone from PVE"
-  # We delegate this specifically to PVE because that is where templates live
   delegate_to: pve
+  shell: |
+    qm unlock {{ template_vmid }} || true
+    qm destroy {{ template_vmid }} --purge || true
+  failed_when: false
+
+- name: "SEARCH & BAKE: Locate and Clone {{ current_app }}"
+  # We loop through Proxmox nodes here to find the VM
+  delegate_to: "{{ item }}"
+  loop: "{{ proxmox_nodes }}"
+  # Skip 'legs' and avoid redundant checks if we already finished the clone
+  when: item != 'legs' and (bake_complete is not defined or not bake_complete)
   block:
-    - name: "Check if {{ template_vmid }} exists on PVE"
-      shell: "qm status {{ template_vmid }}"
-      register: pve_template_check
-      failed_when: false
-      changed_when: false
-
-    - name: "Destroy existing template on PVE"
-      shell: |
-        qm unlock {{ template_vmid }} || true
-        qm destroy {{ template_vmid }} --purge
-      when: pve_template_check.rc == 0
-
-- name: "LOCAL CLEANUP: Ensure {{ template_vmid }} is gone from {{ current_node }}"
-  # Now we check the current node in the loop to prevent the "File exists" error
-  delegate_to: "{{ current_node }}"
-  when: current_node != 'pve'
-  block:
-    - name: "Check if {{ template_vmid }} exists on {{ current_node }}"
-      shell: "qm status {{ template_vmid }}"
-      register: local_template_check
-      failed_when: false
-      changed_when: false
-
-    - name: "Destroy existing VM on {{ current_node }}"
-      shell: "qm destroy {{ template_vmid }} --purge"
-      when: local_template_check.rc == 0
-
-- name: "SOURCE: Clone and Move {{ current_app }}"
-  delegate_to: "{{ current_node }}"
-  block:
-    - name: "Locate source VM {{ source_vmid }} on {{ current_node }}"
+    - name: "Locate source VM {{ source_vmid }} on {{ item }}"
       shell: "qm config {{ source_vmid }}"
       register: source_vm_check
       failed_when: false
       changed_when: false
 
-    - name: "Clone and Migrate"
+    - name: "Perform Bake and Migrate"
       when: source_vm_check.rc == 0
-      shell: |
-        qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
-        {% if current_node != 'pve' %}
-        qm migrate {{ template_vmid }} pve
-        {% endif %}
+      block:
+        - name: "Clone and Migrate to PVE"
+          shell: |
+            qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
+            {% if item != 'pve' %}
+            qm migrate {{ template_vmid }} pve
+            {% endif %}
+        
+        - name: "Mark Bake as Complete"
+          set_fact:
+            bake_complete: true
+
+- name: "SANITIZE: Finalize Template on PVE"
+  delegate_to: pve
+  # We only run this once per app
+  block:
+    - name: "Wait for Migration to finish"
+      shell: "qm status {{ template_vmid }}"
+      register: pve_vm_check
+      until: pve_vm_check.rc == 0
+      retries: 30
+      delay: 5
+
+    # ... insert your Start, Guest Exec Sanitization, and Template tasks here ...
+
+    - name: "Reset Bake State for next app"
+      set_fact:
+        bake_complete: false
