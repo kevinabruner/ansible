@@ -1,7 +1,48 @@
-- name: Build the Drupal composer files
+- name: Build the Drupal composer files centrally
   hosts: role_drupal:&env_dev
   vars_files:
     - vars.yaml
-  tasks:      
-    - name: Build composer tasks from ansible
-      import_tasks: tasks/1-build-composer.yaml
+  tasks:
+    - name: Identify the application group
+      ansible.builtin.set_fact:
+        # Extracts the repo name (e.g., repo_nerdperk)
+        current_repo_group: "{{ group_names | select('match', '^repo_') | first | default('none') }}"
+
+    - name: Create dynamic per-repo groups
+      ansible.builtin.group_by:
+        key: "build_target_{{ current_repo_group }}"
+      when: current_repo_group != 'none'
+
+    - name: Execute Local Build
+      delegate_to: localhost
+      when: 
+        - current_repo_group != 'none'
+        - inventory_hostname == groups['build_target_' + current_repo_group][0]
+        # ^ runs on the first member of each repo group so "one build per drupal applicaiton"
+      block:
+        - name: Remove local build directory if it exists
+          ansible.builtin.file:
+            path: "{{ git_dir }}/.build"
+            state: absent
+
+        - name: Ensure .build directory exists locally
+          ansible.builtin.file:
+            path: "{{ git_dir }}/.build"
+            state: directory
+            mode: "0755"
+
+        - name: Copy composer file locally
+          ansible.builtin.copy:
+            src: "{{ git_dir }}/drupal/composer.json"
+            dest: "{{ git_dir }}/.build/composer.json"
+
+        - name: Build composer project locally
+          community.general.composer:
+            command: install
+            working_dir: "{{ git_dir }}/.build"
+          register: composer_output
+
+        - name: Show composer output
+          ansible.builtin.debug:
+            var: composer_output.stdout_lines
+          when: composer_output.stdout is defined
