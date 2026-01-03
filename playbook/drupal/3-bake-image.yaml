@@ -9,7 +9,17 @@
   tasks:
     - name: Identify Apps and Nodes
       set_fact:
-        app_list: "{{ (ansible_limit is defined) | ternary(groups['role_drupal'] | intersect(ansible_play_batch_all), groups['role_drupal']) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+        app_list: >-
+          {% set apps = [] %}
+          {% for host in groups['role_drupal'] %}
+            {% set repo = hostvars[host].group_names | select('match', '^repo_') | first | replace('repo_', '') %}
+            {% if ansible_limit is not defined or repo in ansible_limit %}
+              {% if repo not in apps %}
+                {% set _ = apps.append(repo) %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {{ apps }}
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
     - name: Trigger Baking Process
