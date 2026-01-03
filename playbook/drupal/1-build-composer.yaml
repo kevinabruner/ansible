@@ -20,21 +20,25 @@
         - inventory_hostname == groups['build_target_' + current_repo_group][0]
         # ^ runs on the first member of each repo group so "one build per drupal applicaiton"
       block:
+        - name: Set local paths for this specific build
+          ansible.builtin.set_fact:
+            local_git_dir: "/home/kevin/{{ repo_name }}"
         - name: Remove local build directory if it exists
+
           ansible.builtin.file:
-            path: "{{ git_dir }}/.build"
+            path: "{{ local_git_dir }}/.build"
             state: absent
 
         - name: Ensure .build directory exists locally
           ansible.builtin.file:
-            path: "{{ git_dir }}/.build"
+            path: "{{ local_git_dir }}/.build"
             state: directory
             mode: "0755"
 
         - name: Copy composer file locally
           ansible.builtin.copy:
-            src: "{{ git_dir }}/drupal/composer.json"
-            dest: "{{ git_dir }}/.build/composer.json"
+            src: "{{ local_git_dir }}/drupal/composer.json"
+            dest: "{{ local_git_dir }}/.build/composer.json"
 
         - name: Build composer project locally
           community.general.composer:
