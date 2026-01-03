@@ -16,5 +16,3 @@
       loop: "{{ drupal_apps }}"
       loop_control:
         loop_var: current_app
-      # This ensures that even if a Dev host is the 'leader', we don't proceed without apps
-      when: drupal_apps | length > 0
