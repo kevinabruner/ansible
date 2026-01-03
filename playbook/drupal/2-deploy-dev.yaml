@@ -1,9 +1,7 @@
 - name: Parallel Deploy for Dev
   hosts: repo_recursioncomic:&env_dev
-  vars:
-    - APPLICATION: "recursioncomic"
   vars_files:
-    - ../../ansible/playbook/drupal/vars.yaml
+    - vars.yaml
     - vault.yaml
 
   pre_tasks:
