@@ -1,23 +1,16 @@
-- name: Create Production Template from Dev VM 
-  hosts: role_proxmox_host:!legs"
+- name: Create Production Templates for All Apps
+  hosts: role_proxmox_host:!legs
   remote_user: root  
-  vars:
-    - APPLICATION: "recursioncomic"
   vars_files:
-    - ../../ansible/playbook/drupal/vars.yaml
+    - vars.yaml
     - vault.yaml
   tasks:
-    - name: Create image template tasks from ansible 
-      import_tasks: ../../ansible/playbook/drupal/tasks/3a-create-template.yaml
+    - name: Get list of applications from groups
+      set_fact:
+        app_list: "{{ groups.keys() | select('match', '^repo_') | map('replace', 'repo_', '') | list }}"
 
-- name: Mod template from Dev VM 
-  hosts: pve
-  remote_user: root  
-  vars:
-    - APPLICATION: "recursioncomic"
-  vars_files:
-    - ../../ansible/playbook/drupal/vars.yaml
-    - vault.yaml
-  tasks:
-    - name: Create image template tasks from ansible 
-      import_tasks: ../../ansible/playbook/drupal/tasks/3b-mod-template.yaml
+    - name: Process each application template
+      include_tasks: 3a-create-template.yaml
+      loop: "{{ app_list }}"
+      loop_control:
+        loop_var: current_app

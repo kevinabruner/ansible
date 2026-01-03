@@ -1,45 +1,87 @@
-- name: Check if the Dev VM is registered on THIS node
-  shell: "/usr/sbin/qm config {{ vmid }}"
-  register: vm_on_node
-  failed_when: false
-  changed_when: false
-  remote_user: root  
-
-- name: DEBUG - Identify VM ID for check
-  debug:
-    msg: "Node {{ inventory_hostname }} is looking for VM ID: {{ hostvars[target_vm].custom_fields.vmid | default('NOT_FOUND') }}"
-
-- name: Set facts and skip if VM is not here
-  set_fact:
-    is_source_node: "{{ vm_on_node.rc == 0 }}"
-
-- name: Template Creation Process
-  when: is_source_node
+- name: "Template Process for {{ current_app }}"
   block:
-    - name: Create local shortcuts for VM variables
+    - name: Identify source VM ID
+      # Look at the first dev node for this repo to get the VMID
       set_fact:
-        template_vmid: "{{ vmid ~ '0' }}"
+        source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] }}"
+        template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['vmid'] ~ '0' }}"
 
-    - name: Check if old template exists ON PVE
-      shell: "/usr/sbin/qm status {{ template_vmid }}"
-      delegate_to: pve  
-      register: template_check
+    - name: Check if the Dev VM is registered on THIS node
+      shell: "/usr/sbin/qm config {{ source_vmid }}"
+      register: vm_on_node
       failed_when: false
       changed_when: false
 
-    - name: Destroy old template ON PVE
-      shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
-      delegate_to: pve  
-      when: template_check.rc == 0
-      async: 60    
-      poll: 5      
+    - name: Create Template if VM is found here
+      when: vm_on_node.rc == 0
+      block:
+        - name: Check if old template exists
+          shell: "/usr/sbin/qm status {{ template_vmid }}"
+          register: template_check
+          failed_when: false
 
-    - name: Clone Dev VM
-      shell: >
-        /usr/sbin/qm clone {{ vmid }} {{ template_vmid }} 
-        --full 
-        --name {{ APPLICATION }}-golden 
-        --storage truenas-nfs 
+        - name: Destroy old template
+          shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
+          when: template_check.rc == 0
 
-    - name: Migrate the clone to target node
-      shell: "/usr/sbin/qm migrate {{ template_vmid }} pve"
+        - name: Clone Dev VM to Golden
+          shell: >
+            /usr/sbin/qm clone {{ source_vmid }} {{ template_vmid }} 
+            --full 
+            --name {{ current_app }}-golden 
+            --storage truenas-nfs 
+
+        - name: Set Guest Agent
+          shell: "qm set {{ template_vmid }} --agent 1"
+
+        - name: Create local shortcuts for VM variables
+          set_fact:
+            vm_app: "{{ APPLICATION }}" 
+            template_name: "{{ APPLICATION }}-golden"
+            template_vmid: "{{ vmid ~ '0' }}"
+
+        - name: Ensure Guest Agent is enabled on clone
+          shell: "qm set {{ template_vmid }} --agent 1"
+
+        - name: Start the cloned VM
+          community.general.proxmox_kvm:
+            api_user: "{{ proxmox_api_user }}"
+            api_token_id: "{{ proxmox_token_id }}"
+            api_token_secret: "{{ proxmox_token_secret }}"
+            api_host: "{{ inventory_hostname }}"
+            vmid: "{{ template_vmid }}"
+            state: started
+
+        - name: Wait for Guest Agent to respond
+          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
+          register: agent_ready
+          until: agent_ready.rc == 0
+          retries: 20
+          delay: 10
+
+        - name: Sanitize via Guest Agent
+          shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
+          loop:
+            - "cloud-init clean --logs"
+            - "truncate -s 0 /etc/machine-id"
+            - "rm -f /etc/ssh/ssh_host_*"
+
+        - name: Shutdown the clone
+          community.general.proxmox_kvm:
+            api_user: "{{ proxmox_api_user }}"
+            api_token_id: "{{ proxmox_token_id }}"
+            api_token_secret: "{{ proxmox_token_secret }}"
+            api_host: "{{ inventory_hostname }}"
+            vmid: "{{ template_vmid }}"
+            state: stopped
+            timeout: 300  
+
+        - name: Wait for VM to reach stopped state
+          shell: "qm status {{ template_vmid }}"
+          register: vm_status
+          until: "'stopped' in vm_status.stdout"
+          retries: 12
+          delay: 5  
+
+        - name: Finalize conversion to Template
+          shell: "qm template {{ template_vmid }}"
