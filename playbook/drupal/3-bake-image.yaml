@@ -1,5 +1,4 @@
 - name: Bake Drupal Images
-  # Using 'all' but ensuring localhost is always targeted as the orchestrator
   hosts: all
   gather_facts: false
   vars_files:
@@ -9,29 +8,14 @@
   tasks:
     - name: Identify Apps and Nodes
       run_once: true
-      # We delegate to localhost so the variable is stored on the control node
-      delegate_to: localhost
       set_fact:
-        app_list: >-
-          {% set all_apps = groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list %}
-          {% if ansible_limit is defined %}
-            {{ all_apps | select('in', ansible_limit) | list }}
-          {% else %}
-            {{ all_apps }}
-          {% endif %}
+        # We use ansible_play_batch here because it respects your --limit perfectly
+        app_list: "{{ ansible_play_batch | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
-
-    - name: Ensure app_list is a list object
-      run_once: true
-      delegate_to: localhost
-      set_fact:
-        app_list: "{{ app_list | from_yaml }}"
 
     - name: Trigger Baking Process
       run_once: true
-      # Run the logic specifically from the localhost context
-      delegate_to: localhost
       include_tasks: tasks/3-bake-image-tasks.yaml
-      loop: "{{ hostvars['localhost']['app_list'] }}"
+      loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app
