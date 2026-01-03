@@ -10,7 +10,7 @@
         app_list: "{{ groups.keys() | select('match', '^repo_') | map('replace', 'repo_', '') | list }}"
 
     - name: Process each application template
-      include_tasks: 3a-create-template.yaml
+      include_tasks: tasks/3a-create-template.yaml
       loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app
