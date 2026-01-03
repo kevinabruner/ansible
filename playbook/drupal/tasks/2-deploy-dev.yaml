@@ -20,6 +20,13 @@
     - qemu-guest-agent
     - ceph-common
   become: true
+  
+- name: Ensure kevin is in the www-data group
+  ansible.builtin.user:
+    name: "{{ ANSIBLE_USER }}"
+    groups: www-data
+    append: yes
+  become: true
 
 - name: Identify Repository/Application
   ansible.builtin.set_fact:
@@ -75,14 +82,16 @@
     state: directory
   become: true
 
-- name: Sync web directory
+- name: Sync web and vendor directories
+  # Using synchronize requires rsync on both ends
   ansible.posix.synchronize:
-    src: "{{ git_dir }}/.build/html/" 
-    dest: "/var/www/html/"
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     delete: yes
-    rsync_opts:
-      - "--exclude=sites/default/files"
-      - "--exclude=sites/default/settings.php"
+    rsync_opts: "{{ item.opts | default([]) }}"
+  loop:
+    - { src: "{{ git_dir }}/.build/html/", dest: "/var/www/html/", opts: ["--exclude=sites/default/files", "--exclude=sites/default/settings.php"] }
+    - { src: "{{ git_dir }}/.build/vendor/", dest: "/var/www/vendor/" }
   become: true
 
 - name: Sync vendor directory
