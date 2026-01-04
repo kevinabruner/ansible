@@ -21,6 +21,10 @@
                | list }}
           {% endif %}
 
+    - name: Force app_list to be a true list object
+      set_fact:
+        app_list: "{{ app_list | from_yaml }}"
+
 - name: Serial Rolling Deploy for Prod
   hosts: "role_drupal:&env_prod{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   serial: 1  
