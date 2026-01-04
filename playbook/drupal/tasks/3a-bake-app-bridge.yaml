@@ -3,7 +3,7 @@
     bake_found: false      
     source_vmid: >-
       {{ 
-        (groups['repo_' + current_app] | intersect(groups['env_dev'])) 
+        (groups['repo_' + current_app] | intersect(groups['env_dev']) | sort) 
         | map('extract', hostvars, ['custom_fields', 'vmid']) 
         | first 
       }}
