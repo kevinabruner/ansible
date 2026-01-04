@@ -12,7 +12,7 @@
   set_fact:
     template_vmid: "{{ source_vmid ~ '0' }}"
 
-- name: "PHASE 1: Search and Clone for dev instance of {{ current_app }}"
+- name: "PHASE 1: Search for and Clone dev instance of {{ current_app }}"
   include_tasks: 3b-locate-proxmox-node.yaml
   loop: "{{ hostvars['localhost']['proxmox_nodes'] }}"
   loop_control:
