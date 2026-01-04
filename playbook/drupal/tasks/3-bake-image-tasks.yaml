@@ -1,12 +1,14 @@
----
-- name: "PREP: Identify IDs for {{ current_app }}"
+- name: "PREP: Identify IDs and reset state for {{ current_app }}"
   set_fact:
+    # We grab the VMID from the first host in the specific repo group
     source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
     bake_complete: false
 
 - name: "GLOBAL CLEANUP: Ensure {{ template_vmid }} is gone from PVE"
   delegate_to: pve
+  vars:
+    ansible_user: root
   shell: |
     qm unlock {{ template_vmid }} || true
     qm destroy {{ template_vmid }} --purge || true
@@ -17,13 +19,15 @@
   loop: "{{ proxmox_nodes }}"
   loop_control:
     loop_var: node_item
+  # Only continue searching if we haven't successfully cloned/migrated yet
   when: 
     - node_item != 'legs'
     - not bake_complete
 
 - name: "SANITIZE: Finalize Template on PVE"
   delegate_to: pve
-  # Added 'block:' here to satisfy the parser
+  vars:
+    ansible_user: root
   block:
     - name: "Wait for Migration to finish"
       shell: "qm status {{ template_vmid }}"
@@ -31,11 +35,9 @@
       until: pve_vm_check.rc == 0
       retries: 30
       delay: 5
-      when: bake_complete
 
     - name: "Start {{ current_app }} for sanitization"
       shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
-      when: bake_complete
 
     - name: "Wait for Guest Agent on {{ current_app }}"
       shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c uptime"
@@ -43,7 +45,6 @@
       until: agent_ready.rc == 0
       retries: 20
       delay: 10
-      when: bake_complete
 
     - name: "Run Sanitization Scripts"
       shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
@@ -51,12 +52,11 @@
         - "cloud-init clean --logs"
         - "truncate -s 0 /etc/machine-id"
         - "rm -f /etc/ssh/ssh_host_*"
-      when: bake_complete
 
     - name: "Finalize: Stop and Template"
       shell: |
         qm shutdown {{ template_vmid }}
-        until [ "$(qm status {{ template_vmid }})" = "status: stopped" ]; do 
+        while [ "$(qm status {{ template_vmid }})" != "status: stopped" ]; do 
           sleep 5
         done
         qm template {{ template_vmid }}

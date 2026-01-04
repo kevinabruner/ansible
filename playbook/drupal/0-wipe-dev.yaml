@@ -1,5 +1,5 @@
 - name: Re-deploy dev servers for fresh installation 
-  hosts: role_drupal:&env_dev
+  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   vars_files:
     - vars.yaml
     - vault.yaml

@@ -1,22 +1,37 @@
-
-- name: "Locate source VM {{ source_vmid }} on {{ node_item }}"
-  delegate_to: "{{ node_item }}"
-  shell: "qm config {{ source_vmid }}"
-  register: source_vm_check
+---
+- name: "Check for VM {{ target_vmid }} on {{ current_node }}"
+  delegate_to: "{{ current_node }}"
+  remote_user: root
+  shell: "qm config {{ target_vmid }}"
+  register: vm_check
   failed_when: false
   changed_when: false
+  when: bake_complete is undefined or not bake_complete
 
-- name: "Perform Bake and Migrate"
-  delegate_to: "{{ node_item }}"
-  when: source_vm_check.rc == 0
+- name: "Clone, Migrate, and Template"
+  when: 
+    - (bake_complete is undefined or not bake_complete)
+    - vm_check.rc == 0
   block:
-    - name: "Clone and Migrate to PVE"
-      shell: |
-        qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs
-        {% if node_item != 'pve' %}
-        qm migrate {{ template_vmid }} pve
-        {% endif %}
-    
-    - name: "Mark Bake as Complete"
+    - name: "Cleanup old template on PVE"
+      delegate_to: pve
+      remote_user: root
+      shell: "qm destroy {{ template_vmid }} --purge"
+      failed_when: false
+
+    - name: "Clone VM {{ target_vmid }} on {{ current_node }}"
+      delegate_to: "{{ current_node }}"
+      remote_user: root
+      shell: >
+        qm clone {{ target_vmid }} {{ template_vmid }} 
+        --full --name {{ app }}-golden --storage truenas-nfs
+
+    - name: "Migrate to PVE"
+      delegate_to: "{{ current_node }}"
+      remote_user: root
+      shell: "qm migrate {{ template_vmid }} pve"
+      when: current_node != 'pve'
+
+    - name: "Mark as Complete"
       set_fact:
         bake_complete: true

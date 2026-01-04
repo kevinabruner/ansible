@@ -1,22 +1,26 @@
 - name: Bake Drupal Images
-  hosts: all
+  hosts: localhost
   gather_facts: false
-  remote_user: root  # <--- Ensure this is here
   vars_files:
     - vars.yaml
     - vault.yaml
 
   tasks:
-    - name: Identify Apps and Nodes
-      run_once: true
+    - name: Validate App Variable
+      fail:
+        msg: "Please provide an app to bake. Example: -e 'app=koscinski'"
+      when: app is undefined
+
+    - name: Identify Target VM Details
       set_fact:
-        # We use ansible_play_batch here because it respects your --limit perfectly
-        app_list: "{{ ansible_play_batch | intersect(groups['role_drupal']) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}"
+        # We find the first dev host for this app to get the VMID
+        target_vmid: "{{ hostvars[groups['repo_' + app] | intersect(groups['env_dev']) | first]['custom_fields']['vmid'] }}"
+        template_vmid: "{{ hostvars[groups['repo_' + app] | intersect(groups['env_dev']) | first]['custom_fields']['vmid'] ~ '0' }}"
+        # Define your Proxmox cluster nodes
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
-    - name: Trigger Baking Process
-      run_once: true
-      include_tasks: tasks/3-bake-image-tasks.yaml
-      loop: "{{ app_list }}"
+    - name: "Find and Bake VM {{ target_vmid }}"
+      include_tasks: tasks/3-bake-logic.yaml
+      loop: "{{ proxmox_nodes }}"
       loop_control:
-        loop_var: current_app
+        loop_var: current_node

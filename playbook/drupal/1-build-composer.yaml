@@ -1,5 +1,5 @@
 - name: Build the Drupal composer files centrally
-  hosts: role_drupal:&env_dev
+  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   gather_facts: false
   vars_files:
     - vars.yaml
@@ -16,19 +16,14 @@
             key: "build_ready_{{ detected_repo }}"
 
         - name: Run Build Block
-          #run only on first hit for repo
-          when: inventory_hostname == groups['repo_' + detected_repo][0]
+          # the build only happens once on your local machine.
+          when: inventory_hostname == (groups['repo_' + detected_repo] | intersect(ansible_play_batch) | first)
           block:
-            - name: Remove local build directory
+            - name: "Building {{ detected_repo }} locally..."
               ansible.builtin.file:
                 path: "/home/kevin/{{ detected_repo }}/.build"
-                state: absent
-
-            - name: Ensure .build directory exists
-              ansible.builtin.file:
-                path: "/home/kevin/{{ detected_repo }}/.build"
-                state: directory
-                mode: "0755"
+                state: "{{ item }}"
+              loop: [absent, directory]
 
             - name: Copy composer file
               ansible.builtin.copy:
@@ -39,9 +34,6 @@
               community.general.composer:
                 command: install
                 working_dir: "/home/kevin/{{ detected_repo }}/.build"
+                # Adding optimize_autoloader is usually best for Drupal
+                optimize_autoloader: yes 
               register: composer_output
-
-            - name: Show composer output
-              ansible.builtin.debug:
-                var: composer_output.stdout_lines
-              when: composer_output.stdout is defined
