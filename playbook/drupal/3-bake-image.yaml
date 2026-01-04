@@ -32,7 +32,7 @@
       loop_control:
         loop_var: current_app
 
-- name: PHASE 2: Sanitize and Template on PVE
+- name: PHASE 2 Sanitize and Template on PVE
   hosts: pve
   remote_user: root
   gather_facts: false
