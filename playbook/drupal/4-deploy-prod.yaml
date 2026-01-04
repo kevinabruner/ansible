@@ -4,6 +4,7 @@
   vars_files:
     - vars.yaml
     - vault.yaml
+    - "/home/{{ ANSIBLE_USER }}/db-server/playbook/vault.yaml"
   tasks:
     - name: Identify target apps
       set_fact:
