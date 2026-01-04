@@ -11,7 +11,7 @@
         app_list: >-
           {% if target_app is defined %}
             {{ [target_app] }}
-          {% else %}
+          {% else %} 
             {{ groups['role_drupal'] 
                | map('extract', hostvars, 'group_names') 
                | flatten 
