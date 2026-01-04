@@ -10,6 +10,7 @@
   
   tasks:
     - name: Install apt packages
+      become: true
       ansible.builtin.apt:
         name:
           - apache2
