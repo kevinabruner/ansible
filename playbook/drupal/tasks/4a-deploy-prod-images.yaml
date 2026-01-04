@@ -19,9 +19,6 @@
         delay: 20
         timeout: 300
 
-    - name: "Refresh: Reset SSH connection"
-      meta: reset_connection
-
     # --- Configuration Phase (Runs directly on the host) ---
     - name: "Services: Configure Apache2 on {{ inventory_hostname }}"
       become: true
