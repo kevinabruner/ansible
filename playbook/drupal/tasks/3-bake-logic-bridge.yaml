@@ -2,11 +2,11 @@
   set_fact:
     bake_found: false      
     source_vmid: >-
-      {{ 
+      "{{ 
         (groups['repo_' + current_app] | intersect(groups['env_dev'])) 
         | map('extract', hostvars, ['custom_fields', 'vmid']) 
         | first 
-      }}
+      }}"
     template_vmid: "{{ source_vmid ~ '0' }}"
 
 - name: "PHASE 1: Search and Clone for {{ current_app }}"
