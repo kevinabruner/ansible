@@ -27,6 +27,13 @@
         group: www-data
         mode: '0644'
 
+    - name: "Restart apache"
+      become: true
+      ansible.builtin.systemd:
+        name: apache2
+        enabled: true
+        state: restarted
+
     - name: "Cron: Create staggered rsync backup"
       become: true
       ansible.builtin.cron:
@@ -36,9 +43,3 @@
         job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
         user: root
 
-    - name: "Enable and start apache"
-      become: true
-      ansible.builtin.systemd:
-        name: apache2
-        enabled: true
-        state: started

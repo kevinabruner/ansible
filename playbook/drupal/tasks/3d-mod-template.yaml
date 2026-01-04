@@ -24,13 +24,6 @@
         - "truncate -s 0 /etc/machine-id"
         - "rm -f /etc/ssh/ssh_host_*"
 
-    - name: "Disable apache"
-      become: true
-      ansible.builtin.service:
-        name: apache2
-        enabled: false
-        state: stopped
-
     - name: "Power down and convert to Template"
       shell: |
         qm shutdown {{ template_vmid }}
