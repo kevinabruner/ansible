@@ -19,7 +19,7 @@
         msg: "The following apps will be baked: {{ app_list }}"
 
 - name: PHASE 1 Locate, Clone, and Migrate
-  hosts: role_proxmox_host:
+  hosts: role_proxmox_host
   remote_user: root
   gather_facts: false
   vars_files:
