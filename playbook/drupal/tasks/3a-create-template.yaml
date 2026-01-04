@@ -1,10 +1,3 @@
-- name: "Set VM IDs for {{ current_app }}"
-  set_fact:
-    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
-    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
-    bake_found: false
-  when: bake_found is undefined or not bake_found
-
 - name: "Check for VM {{ source_vmid }} on {{ node_item }}"
   delegate_to: "{{ node_item }}"
   remote_user: root
@@ -12,13 +5,13 @@
   register: vm_check
   failed_when: false
   changed_when: false
-  when: not bake_found
+  when: not bake_found | bool
 
-- name: "Execute Clone and Migrate for {{ current_app }}"
+- name: "Clone and Migrate {{ current_app }}"
   delegate_to: "{{ node_item }}"
   remote_user: root
   when: 
-    - not bake_found
+    - not bake_found | bool
     - vm_check.rc == 0
   block:
     - name: "Clean up existing template on PVE for {{ current_app }}"
@@ -32,6 +25,6 @@
       shell: "qm migrate {{ template_vmid }} pve"
       when: node_item != 'pve'
 
-    - name: "Flag app as found"
+    - name: "Flag {{ current_app }} as found"
       set_fact:
         bake_found: true
