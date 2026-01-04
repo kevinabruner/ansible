@@ -14,21 +14,21 @@
   changed_when: false
   when: not bake_found
 
-- name: "Execute Clone and Migrate"
+- name: "Execute Clone and Migrate for {{ current_app }}"
   delegate_to: "{{ node_item }}"
   remote_user: root
   when: 
     - not bake_found
     - vm_check.rc == 0
   block:
-    - name: "Clean up existing template on PVE"
+    - name: "Clean up existing template on PVE for {{ current_app }}"
       delegate_to: pve
       shell: "qm destroy {{ template_vmid }} --purge || true"
 
-    - name: "Clone {{ source_vmid }} to {{ template_vmid }}"
+    - name: "Clone {{ source_vmid }} to {{ template_vmid }} for {{ current_app }}"
       shell: "qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs"
 
-    - name: "Migrate to PVE"
+    - name: "Migrate {{ current_app }} {{ template_vmid }} to PVE"
       shell: "qm migrate {{ template_vmid }} pve"
       when: node_item != 'pve'
 
