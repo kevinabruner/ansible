@@ -10,7 +10,6 @@
 
 - name: "Perform Migration and Bake"
   include_tasks: tasks/inner-migrate-and-bake.yaml
-  remote_user: root
   when: 
     - not bake_found | bool
     - vm_check.rc is defined and vm_check.rc == 0
