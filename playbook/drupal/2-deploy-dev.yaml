@@ -41,6 +41,7 @@
 
     - name: Identify Repository/Application
       ansible.builtin.set_fact:
+        APPLICATION: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
         current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
 
     - name: Enable and stop apache2 and qemu 
@@ -180,7 +181,7 @@
     - name: Mount CephFS and add to fstab
       ansible.posix.mount:
         path: "{{ ceph_target_dir }}"
-        src: "{{ ceph_monitors }}:/{{ current_app }}"
+        src: "{{ ceph_monitors }}:/{{ APPLICATION }}"
         fstype: ceph
         opts: "name={{ ceph_user }},secretfile=/etc/ceph/{{ ceph_user }}.secret,_netdev"
         state: mounted
