@@ -1,12 +1,12 @@
 ANSIBLE_USER: kevin
-git_dir: /home/{{ ANSIBLE_USER }}/{{ APPLICATION }}
+git_dir: /home/{{ ANSIBLE_USER }}/{{ current_app }}
 netbox_dns: netbox.thejfk.ca
 INTERFACE: eth0
 nfs_target_dir: /home/{{ ANSIBLE_USER }}/nfs-files
 nfs_server: 192.168.11.20
-nfs_share: /mnt/yes/gitbuilds/{{ APPLICATION }}/files
-dbName: "{{ APPLICATION }}"
-username: "{{ APPLICATION }}"
+nfs_share: /mnt/yes/gitbuilds/{{ current_app }}/files
+dbName: "{{ current_app }}"
+username: "{{ current_app }}"
 drush: /var/www/vendor/drush/drush/drush
 env: "{{ custom_fields.dev_or_prod }}"
 nfs_options:
