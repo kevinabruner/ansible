@@ -20,13 +20,13 @@
                | list }}
           {% endif %}
 
-    - name: Ensure app_list is is a lists
-      set_fact:
-        app_list: "{{ app_list | from_yaml }}"
+    # - name: Ensure app_list is is a lists
+    #   set_fact:
+    #     app_list: "{{ app_list | from_yaml }}"
 
-    - name: Ensure proxmox_nodes is a list
-      set_fact:
-        proxmox_nodes: "{{ groups['role_proxmox_host'] | default([])) }}"
+    # - name: Ensure proxmox_nodes is a list
+    #   set_fact:
+    #     proxmox_nodes: "{{ groups['role_proxmox_host'] | default([])) }}"
 
     - name: Debug - Apps to be processed
       debug:
