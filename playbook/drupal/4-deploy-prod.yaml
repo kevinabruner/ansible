@@ -34,7 +34,6 @@
       loop: "{{ hostvars['localhost']['app_list'] }}"
       loop_control:
         loop_var: current_app
-      # Guard: Only run if this specific host belongs to the app being looped
       when: "'repo_' + current_app in group_names"
 
 - name: Update DBs after deployment
