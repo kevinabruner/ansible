@@ -30,8 +30,7 @@
     - name: "Cron: Create staggered rsync backup"
       become: true
       ansible.builtin.cron:
-        name: "Backup CephFS to NFS"
-        # Uses the host's position in the group to avoid simultaneous high I/O
+        name: "Backup CephFS to NFS"        
         hour: "{{ (3 + groups['repo_' + current_app].index(inventory_hostname)) % 24 }}"
         minute: "0"
         job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
