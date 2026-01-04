@@ -37,3 +37,8 @@
                 # Adding optimize_autoloader is usually best for Drupal
                 optimize_autoloader: yes 
               register: composer_output
+            
+            - name: Show Composer Output
+              ansible.builtin.debug:
+                var: composer_output.stdout_lines
+              when: composer_output.stdout is defined
