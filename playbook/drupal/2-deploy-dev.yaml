@@ -136,13 +136,16 @@
 
     - name:  enable haproxy-target site
       become: true
-      command: a2ensite haproxy-target
+      command: a2ensite haproxy-target 
 
-    - name: Copy php settings file
+    - name: "Drupal: Deploy settings.php"
       become: true
       template:
-        src: "{{ git_dir }}/templates/settings.php.j2"
-        dest: "/var/www/html/sites/default/settings.php"     
+        src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
+        dest: "/var/www/html/sites/default/settings.php"
+        owner: www-data
+        group: www-data
+        mode: '0644'   
 
     - name: Copy theme(s)
       ansible.builtin.copy:
