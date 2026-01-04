@@ -13,35 +13,21 @@
           {% else %}
             {{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
           {% endif %}
+        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
     - name: Debug - Apps to be processed
       debug:
         msg: "The following apps will be baked: {{ app_list }}"
 
 - name: PHASE 1 Locate, Clone, and Migrate
-  hosts: role_proxmox_host
-  remote_user: root
+  hosts: localhost
   gather_facts: false
   vars_files:
     - vars.yaml
     - vault.yaml
   tasks:
-    - name: Loop over identified apps for Cloning
-      include_tasks: tasks/3a-create-template.yaml
-      loop: "{{ hostvars['localhost']['app_list'] }}"
-      loop_control:
-        loop_var: current_app
-
-- name: PHASE 2 Sanitize and Template on PVE
-  hosts: pve
-  remote_user: root
-  gather_facts: false
-  vars_files:
-    - vars.yaml
-    - vault.yaml
-  tasks:
-    - name: Loop over identified apps for Sanitization
-      include_tasks: tasks/3b-mod-template.yaml
-      loop: "{{ hostvars['localhost']['app_list'] }}"
+    - name: Process each app individually
+      include_tasks: tasks/3-bake-logic-bridge.yaml
+      loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app

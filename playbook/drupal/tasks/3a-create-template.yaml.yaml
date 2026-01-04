@@ -1,26 +1,37 @@
-- name: "Identify IDs for {{ current_app }}"
+- name: "Set VM IDs for {{ current_app }}"
   set_fact:
     source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+    bake_found: false
+  when: bake_found is undefined or not bake_found
 
-- name: "Check if VM {{ source_vmid }} exists on {{ inventory_hostname }}"
+- name: "Check for VM {{ source_vmid }} on {{ node_item }}"
+  delegate_to: "{{ node_item }}"
+  remote_user: root
   shell: "qm config {{ source_vmid }}"
   register: vm_check
   failed_when: false
   changed_when: false
+  when: not bake_found
 
-- name: "Delete existing VM, clone, and migrate to PVE"
-  when: vm_check.rc == 0
+- name: "Execute Clone and Migrate"
+  delegate_to: "{{ node_item }}"
+  remote_user: root
+  when: 
+    - not bake_found
+    - vm_check.rc == 0
   block:
-    - name: "Cleanup PVE before migration"
+    - name: "Clean up existing template on PVE"
       delegate_to: pve
       shell: "qm destroy {{ template_vmid }} --purge || true"
 
-    - name: "Clone VM {{ source_vmid }} on {{ inventory_hostname }}"
-      shell: >
-        qm clone {{ source_vmid }} {{ template_vmid }} 
-        --full --name {{ current_app }}-golden --storage truenas-nfs
+    - name: "Clone {{ source_vmid }} to {{ template_vmid }}"
+      shell: "qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs"
 
-    - name: "Migrate {{ template_vmid }} to PVE"
+    - name: "Migrate to PVE"
       shell: "qm migrate {{ template_vmid }} pve"
-      when: inventory_hostname != 'pve'
+      when: node_item != 'pve'
+
+    - name: "Flag app as found"
+      set_fact:
+        bake_found: true
