@@ -1,27 +1,38 @@
-- name: Deploy Prod Apps from Golden Images
-  hosts: localhost
-  gather_facts: false
+- name: Serial Rolling Deploy for Prod from golden images
+  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
+  set_fact:
+    app_list: >-
+      {% if target_app is defined %}
+        {{ [target_app] }}
+      {% else %}
+        {{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
+      {% endif %}
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  serial: 1  
+  tasks:
+    - name: Loop over identified apps for Deploying
+      include_tasks: tasks/4a-deploy-prod-images.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
+      loop_control:
+        loop_var: current_app
+
+- name: Update DBs after deployment
+  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
+  set_fact:
+  app_list: >-
+    {% if target_app is defined %}
+      {{ [target_app] }}
+    {% else %}
+      {{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
+    {% endif %}
   vars_files:
     - vars.yaml
     - vault.yaml
   tasks:
-    - name: Identify Apps to Deploy
-      set_fact:
-        # If 'app' is passed, use it. Otherwise, target all Production Drupal apps.
-        drupal_apps: >-
-          {% if drupal_app is defined %}
-            {{ [drupal_app] }}
-          {% else %}
-            {{ groups['role_drupal'] | intersect(groups['env_prod']) | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
-          {% endif %}
-
-    - name: "DEBUG - Deployment Scope"
-      ansible.builtin.debug:
-        msg: "The following apps will be deployed: {{ drupal_apps }}"
-
-    - name: Process Serial Deployment
-      include_tasks: tasks/4-deploy-prod-tasks.yaml
-      loop: "{{ drupal_apps }}"
+    - name: Loop over identified apps for Drupal cache updates and refreshing
+      include_tasks: tasks/4b-update-cache-and-dbs.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
       loop_control:
         loop_var: current_app
-      when: drupal_apps | length > 0
