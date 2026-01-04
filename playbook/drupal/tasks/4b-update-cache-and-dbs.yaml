@@ -3,11 +3,13 @@
     cmd: /var/www/vendor/drush/drush/drush cr
   args:
     chdir: "/var/www"            
-  when: inventory_hostname == groups['repo_' + APPLICATION][0]
+  # This targets the first host that is common to BOTH the current play run 
+  # AND the specific application group.
+  when: inventory_hostname == (ansible_play_batch | intersect(groups['repo_' + current_app]) | first)
   
-- name: Update Drupal (drush up)      
+- name: Update Drupal (drush updb)      
   ansible.builtin.command:
     cmd: /var/www/vendor/drush/drush/drush updb -y
   args:
     chdir: "/var/www"      
-  when: inventory_hostname == groups['repo_' + APPLICATION][0]
+  when: inventory_hostname == (ansible_play_batch | intersect(groups['repo_' + current_app]) | first)
