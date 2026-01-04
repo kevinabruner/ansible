@@ -1,12 +1,17 @@
 - name: "Clean up existing template on PVE for {{ current_app }}"
-  delegate_to: pve
+  delegate_to: pve  
+  remote_user: root
   shell: "qm destroy {{ template_vmid }} --purge || true"
 
 - name: "Clone {{ source_vmid }} to {{ template_vmid }} for {{ current_app }}"
+  delegate_to: "{{ node_item }}"
+  remote_user: root
   shell: "qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs"
 
 - name: "Migrate {{ current_app }} {{ template_vmid }} to PVE"
   shell: "qm migrate {{ template_vmid }} pve"
+  delegate_to: "{{ node_item }}"
+  remote_user: root
   when: node_item != 'pve'
 
 - name: "Flag {{ current_app }} as found"
