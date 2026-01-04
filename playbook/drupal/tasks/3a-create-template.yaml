@@ -7,24 +7,12 @@
   changed_when: false
   when: not bake_found | bool
 
-- name: "Clone and Migrate {{ current_app }}"
-  delegate_to: "{{ node_item }}"
+
+- name: "Perform Migration and Bake"
+  include_tasks: tasks/inner-migrate-and-bake.yaml
   remote_user: root
   when: 
     - not bake_found | bool
-    - vm_check.rc == 0
-  block:
-    - name: "Clean up existing template on PVE for {{ current_app }}"
-      delegate_to: pve
-      shell: "qm destroy {{ template_vmid }} --purge || true"
+    - vm_check.rc is defined and vm_check.rc == 0
 
-    - name: "Clone {{ source_vmid }} to {{ template_vmid }} for {{ current_app }}"
-      shell: "qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs"
 
-    - name: "Migrate {{ current_app }} {{ template_vmid }} to PVE"
-      shell: "qm migrate {{ template_vmid }} pve"
-      when: node_item != 'pve'
-
-    - name: "Flag {{ current_app }} as found"
-      set_fact:
-        bake_found: true
