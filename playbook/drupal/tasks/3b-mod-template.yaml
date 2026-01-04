@@ -3,6 +3,9 @@
     template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
 
 - name: "Sanitization and Templating for {{ current_app }}"
+  delegate_to: pve
+  vars:
+    ansible_user: root
   block:
     - name: "Ensure VM {{ template_vmid }} is running"
       shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
