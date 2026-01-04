@@ -1,0 +1,49 @@
+- name: Determine Drupal sites to Bake
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  tasks:
+    - name: Identify target sites
+      set_fact:
+        app_list: >-
+          {% if target_app is defined %}
+            {{ [target_app] }}
+          {% else %}
+            {{ groups['role_drupal'] 
+               | map('extract', hostvars, 'group_names') 
+               | flatten 
+               | select('match', '^repo_') 
+               | map('replace', 'repo_', '') 
+               | unique 
+               | list }}
+          {% endif %}
+
+    - name: Ensure app_list is is a lists
+      set_fact:
+        app_list: "{{ app_list | from_yaml }}"
+
+    - name: Ensure proxmox_nodes is a list
+      set_fact:
+        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
+
+    - name: Debug - Apps to be processed
+      debug:
+        msg: "The following apps will be baked: {{ app_list }}"
+    - name: Debug - Apps to be processed
+      debug:
+        msg: "The following apps will be baked: {{ app_list }}"
+
+- name: PHASE 1 Locate, Clone, and Migrate
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  tasks:
+    - name: Process each app individually
+      include_tasks: tasks/3-bake-logic-bridge.yaml
+      loop: "{{ app_list }}"
+      loop_control:
+        loop_var: current_app

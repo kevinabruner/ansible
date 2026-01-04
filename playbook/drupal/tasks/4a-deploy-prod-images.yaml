@@ -1,56 +1,53 @@
-- name: Force Terraform to recreate this specific node
-  delegate_to: terraform
-  shell: |
-    # Constructing the module path dynamically based on hostname
-    terraform taint 'module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]'
-    terraform apply -target='module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]' -auto-approve
-  args:
-    chdir: "/home/kevin/terraform"
+---
+- name: "Rebuild and Configure: {{ inventory_hostname }}"
+  when: "'repo_' + current_app in group_names"
+  block:
+    - name: "Infrastructure: Taint and Apply for {{ inventory_hostname }}"
+      delegate_to: terraform
+      shell: |
+        terraform taint 'module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]'
+        terraform apply -target='module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]' -auto-approve
+      args:
+        chdir: "/home/kevin/terraform"
 
-- name: Clear old SSH host key from local machine
-  delegate_to: localhost
-  shell: "ssh-keygen -f ~/.ssh/known_hosts -R {{ ansible_host }}"
-  ignore_errors: true
+    - name: "Stability: Wait for {{ inventory_hostname }} SSH"
+      delegate_to: localhost
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        state: started
+        delay: 20
+        timeout: 300
 
-- name: Wait for new VM to be SSH-ready
-  delegate_to: localhost
-  wait_for:
-    host: "{{ ansible_host }}"
-    port: 22
-    state: started
-    delay: 20
-    timeout: 300
+    # --- Configuration Phase (Runs directly on the host) ---
+    - name: "Services: Configure Apache2 on {{ inventory_hostname }}"
+      become: true
+      ansible.builtin.service:
+        name: apache2
+        enabled: yes
+        state: stopped
 
-- name: Enable and stop apache2
-  ansible.builtin.service:
-    name: "{{ item }}"
-    enabled: yes
-    state: stopped
-  loop:
-    - apache2
-  become: true 
+    - name: "Drupal: Deploy settings.php"
+      become: true
+      ansible.builtin.template:
+        src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
+        dest: "/var/www/html/sites/default/settings.php"
+        owner: www-data
+        group: www-data
+        mode: '0644'
 
-- name: Copy php settings file
-  become: true
-  template:
-    src: "{{ git_dir }}/templates/settings.php.j2"
-    dest: "/var/www/html/sites/default/settings.php"     
+    - name: "Cron: Create staggered rsync backup"
+      become: true
+      ansible.builtin.cron:
+        name: "Backup CephFS to NFS"
+        # Uses the host's position in the group to avoid simultaneous high I/O
+        hour: "{{ (3 + groups['repo_' + current_app].index(inventory_hostname)) % 24 }}"
+        minute: "0"
+        job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
+        user: root
 
-- name: Create staggered rsync cron job on prod servers (start at 3am)
-  ansible.builtin.cron:
-    name: "Backup CephFS to NFS"
-    hour: "{{ (3 + ansible_play_hosts.index(inventory_hostname)) % 24 }}"
-    minute: "0"
-    job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
-    user: root
-    state: present
-  become: true
-
-- name: Start apache 
-  ansible.builtin.systemd:
-    name: "{{ item }}"
-    enabled: yes
-    state: started
-  loop:
-    - apache2
-  become: true
+    - name: "Services: Start apache"
+      become: true
+      ansible.builtin.systemd:
+        name: apache2
+        state: started

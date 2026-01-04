@@ -1,0 +1,50 @@
+- name: Determine Drupal sites to Deploy
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+    - /home/kevin/db-server/playbook/vault.yaml
+  tasks:
+    - name: Identify target apps
+      set_fact:
+        app_list: >-
+          {% if target_app is defined %}
+            {{ [target_app] }}
+          {% else %} 
+            {{ groups['role_drupal'] 
+               | map('extract', hostvars, 'group_names') 
+               | flatten 
+               | select('match', '^repo_') 
+               | map('replace', 'repo_', '') 
+               | unique 
+               | list }}
+          {% endif %}
+
+- name: Serial Rolling Deploy for Prod
+  hosts: "role_drupal:&env_prod{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
+  serial: 1  
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+    - /home/kevin/db-server/playbook/vault.yaml
+  tasks:
+    - name: Run deployment tasks
+      include_tasks: tasks/4a-deploy-prod-images.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
+      loop_control:
+        loop_var: current_app
+      when: "'repo_' + current_app in group_names"
+
+- name: Update DBs after deployment
+  hosts: "role_drupal:&env_prod{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  tasks:
+    - name: Run Drupal updates
+      include_tasks: tasks/4b-update-cache-and-dbs.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
+      loop_control:
+        loop_var: current_app
+      when: "'repo_' + current_app in group_names"

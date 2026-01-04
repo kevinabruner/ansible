@@ -1,45 +1,30 @@
-- name: Check if the Dev VM is registered on THIS node
-  shell: "/usr/sbin/qm config {{ vmid }}"
-  register: vm_on_node
+- name: "Check for VM {{ source_vmid }} on {{ node_item }}"
+  delegate_to: "{{ node_item }}"
+  remote_user: root
+  shell: "qm config {{ source_vmid }}"
+  register: vm_check
   failed_when: false
   changed_when: false
-  remote_user: root  
+  when: not bake_found | bool
 
-- name: DEBUG - Identify VM ID for check
-  debug:
-    msg: "Node {{ inventory_hostname }} is looking for VM ID: {{ hostvars[target_vm].custom_fields.vmid | default('NOT_FOUND') }}"
-
-- name: Set facts and skip if VM is not here
-  set_fact:
-    is_source_node: "{{ vm_on_node.rc == 0 }}"
-
-- name: Template Creation Process
-  when: is_source_node
+- name: "Clone and Migrate {{ current_app }}"
+  delegate_to: "{{ node_item }}"
+  remote_user: root
+  when: 
+    - not bake_found | bool
+    - vm_check.rc == 0
   block:
-    - name: Create local shortcuts for VM variables
+    - name: "Clean up existing template on PVE for {{ current_app }}"
+      delegate_to: pve
+      shell: "qm destroy {{ template_vmid }} --purge || true"
+
+    - name: "Clone {{ source_vmid }} to {{ template_vmid }} for {{ current_app }}"
+      shell: "qm clone {{ source_vmid }} {{ template_vmid }} --full --name {{ current_app }}-golden --storage truenas-nfs"
+
+    - name: "Migrate {{ current_app }} {{ template_vmid }} to PVE"
+      shell: "qm migrate {{ template_vmid }} pve"
+      when: node_item != 'pve'
+
+    - name: "Flag {{ current_app }} as found"
       set_fact:
-        template_vmid: "{{ vmid ~ '0' }}"
-
-    - name: Check if old template exists ON PVE
-      shell: "/usr/sbin/qm status {{ template_vmid }}"
-      delegate_to: pve  
-      register: template_check
-      failed_when: false
-      changed_when: false
-
-    - name: Destroy old template ON PVE
-      shell: "/usr/sbin/qm destroy {{ template_vmid }} --purge"
-      delegate_to: pve  
-      when: template_check.rc == 0
-      async: 60    
-      poll: 5      
-
-    - name: Clone Dev VM
-      shell: >
-        /usr/sbin/qm clone {{ vmid }} {{ template_vmid }} 
-        --full 
-        --name {{ APPLICATION }}-golden 
-        --storage truenas-nfs 
-
-    - name: Migrate the clone to target node
-      shell: "/usr/sbin/qm migrate {{ template_vmid }} pve"
+        bake_found: true

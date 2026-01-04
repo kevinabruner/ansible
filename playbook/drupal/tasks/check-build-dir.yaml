@@ -1,14 +1,23 @@
-  - name: Ensure local build directory exists
-    delegate_to: localhost
-    run_once: true
-    ansible.builtin.stat:
-      path: "{{ git_dir }}/.build"
-    register: build_dir
+- name: Identify Repository for verification
+  ansible.builtin.set_fact:
+    # Extracting 'nerdperk', 'koscinski', etc. from the group name
+    target_repo_name: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
 
-  - name: Halt play if .build is missing
-    ansible.builtin.assert:
-      that:
-        - build_dir.stat.exists
-        - build_dir.stat.isdir
-      fail_msg: "ERROR: The directory '{{ git_dir }}/.build' was not found. Ya gotta build it first, dumb-dumb"
-      success_msg: "Build directory verified. Proceeding with deployment."
+- name: Ensure local build directory exists
+  delegate_to: localhost
+  # Removed run_once so it checks once per application
+  # but we use 'when' to only check for the lead host of each repo
+  when: inventory_hostname == groups['repo_' + target_repo_name][0]
+  ansible.builtin.stat:
+    path: "/home/kevin/{{ target_repo_name }}/.build"
+  register: build_dir_stat
+
+- name: Halt play if .build is missing
+  # This assert runs for the same lead host per repo
+  when: inventory_hostname == groups['repo_' + target_repo_name][0]
+  ansible.builtin.assert:
+    that:
+      - build_dir_stat.stat.exists
+      - build_dir_stat.stat.isdir
+    fail_msg: "ERROR: The directory '/home/kevin/{{ target_repo_name }}/.build' was not found. Ya gotta build it first, dumb-dumb"
+    success_msg: "Build directory for {{ target_repo_name }} verified. Proceeding with deployment."
