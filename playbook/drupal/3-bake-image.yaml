@@ -1,29 +1,47 @@
-- name: Bake Drupal Images
+- name: Determine Drupal sites to Bake
   hosts: localhost
   gather_facts: false
   vars_files:
     - vars.yaml
     - vault.yaml
-
   tasks:
-    - name: Identify Apps to Bake
+    - name: Identify target sites
       set_fact:
-        # If drupal_app is provided, put it in a list. 
-        # Otherwise, find all repo names in the role_drupal group.
         app_list: >-
-          {% if drupal_app is defined %}
-            {{ [drupal_app] }}
+          {% if target_app is defined %}
+            {{ [target_app] }}
           {% else %}
             {{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
           {% endif %}
-        proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
-    - name: "DEBUG - Apps to be processed"
-      ansible.builtin.debug:
-        var: app_list
+    - name: Debug - Apps to be processed
+      debug:
+        msg: "The following apps will be baked: {{ app_list }}"
 
-    - name: Trigger Baking Process
-      include_tasks: tasks/3-bake-image-tasks.yaml
-      loop: "{{ app_list }}"
+- name: PHASE 1: Locate, Clone, and Migrate
+  hosts: role_proxmox_host:
+  remote_user: root
+  gather_facts: false
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  tasks:
+    - name: Loop over identified apps for Cloning
+      include_tasks: tasks/3a-create-template.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
+      loop_control:
+        loop_var: current_app
+
+- name: PHASE 2: Sanitize and Template on PVE
+  hosts: pve
+  remote_user: root
+  gather_facts: false
+  vars_files:
+    - vars.yaml
+    - vault.yaml
+  tasks:
+    - name: Loop over identified apps for Sanitization
+      include_tasks: tasks/3b-mod-template.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
       loop_control:
         loop_var: current_app

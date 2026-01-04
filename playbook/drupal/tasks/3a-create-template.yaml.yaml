@@ -1,0 +1,26 @@
+- name: "Identify IDs for {{ current_app }}"
+  set_fact:
+    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
+    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+
+- name: "Check if VM {{ source_vmid }} exists on {{ inventory_hostname }}"
+  shell: "qm config {{ source_vmid }}"
+  register: vm_check
+  failed_when: false
+  changed_when: false
+
+- name: "Delete existing VM, clone, and migrate to PVE"
+  when: vm_check.rc == 0
+  block:
+    - name: "Cleanup PVE before migration"
+      delegate_to: pve
+      shell: "qm destroy {{ template_vmid }} --purge || true"
+
+    - name: "Clone VM {{ source_vmid }} on {{ inventory_hostname }}"
+      shell: >
+        qm clone {{ source_vmid }} {{ template_vmid }} 
+        --full --name {{ current_app }}-golden --storage truenas-nfs
+
+    - name: "Migrate {{ template_vmid }} to PVE"
+      shell: "qm migrate {{ template_vmid }} pve"
+      when: inventory_hostname != 'pve'
