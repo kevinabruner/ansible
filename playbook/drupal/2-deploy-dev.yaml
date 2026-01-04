@@ -1,6 +1,5 @@
 - name: Parallel Deploy for Dev
   hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
-  serial: 1
   vars_files:
     - vars.yaml
     - vault.yaml
