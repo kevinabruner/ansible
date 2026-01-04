@@ -11,8 +11,6 @@
         app_list: "{{ [target_app] if target_app is defined else (groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list) }}"
 
 - name: Serial Rolling Deploy for Prod
-  # Note: Use env_prod here if this is for production! 
-  # You had env_dev in your snippet.
   hosts: "role_drupal:&env_prod{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   serial: 1  
   vars_files:
