@@ -1,9 +1,13 @@
-- name: "--- STARTING BAKE FOR: {{ current_app }} ---"
+- name: "STARTING BAKE FOR: {{ current_app }}"
   set_fact:
-    bake_found: false  # Reset this so search runs for THIS app
-    # Explicitly calculate IDs here to ensure they are fresh
-    source_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] }}"
-    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+    bake_found: false      
+    source_vmid: >-
+      {{ 
+        (groups['repo_' + current_app] | intersect(groups['env_dev'])) 
+        | map('extract', hostvars, ['custom_fields', 'vmid']) 
+        | first 
+      }}
+    template_vmid: "{{ source_vmid ~ '0' }}"
 
 - name: "PHASE 1: Search and Clone for {{ current_app }}"
   include_tasks: 3a-create-template.yaml
