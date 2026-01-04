@@ -31,9 +31,6 @@
     - name: Debug - Apps to be processed
       debug:
         msg: "The following apps will be baked: {{ app_list }}"
-    - name: Debug - Apps to be processed
-      debug:
-        msg: "The following apps will be baked: {{ app_list }}"
 
 - name: PHASE 1 Locate, Clone, and Migrate
   hosts: localhost
