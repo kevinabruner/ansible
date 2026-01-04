@@ -7,14 +7,15 @@
   tasks:
     - name: Identify target sites
       set_fact:
-        app_list: >-
-          {% if target_app is defined %}
-            {{ [target_app] }}
-          {% else %}
-            {{ groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list }}
-          {% endif %}
+        app_list: "{{ [target_app] if target_app is defined else (groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list) }}"
+
+    - name: Ensure proxmox_nodes is a list
+      set_fact:
         proxmox_nodes: "{{ groups['role_proxmox_host'] | difference(groups['legs'] | default([])) }}"
 
+    - name: Debug - Apps to be processed
+      debug:
+        msg: "The following apps will be baked: {{ app_list }}"
     - name: Debug - Apps to be processed
       debug:
         msg: "The following apps will be baked: {{ app_list }}"
