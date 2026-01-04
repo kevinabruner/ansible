@@ -1,9 +1,9 @@
 - name: "PHASE 1: Search and Clone for {{ current_app }}"
-  include_tasks: 3a-create-template.yaml
+  include_tasks: tasks/3a-create-template.yaml
   # We still loop through nodes to find the VM, but it's contained within this app's logic
   loop: "{{ proxmox_nodes }}"
   loop_control:
     loop_var: node_item
 
 - name: "PHASE 2: Sanitize on PVE"
-  include_tasks: 3b-mod-template.yaml
+  include_tasks: tasks/3b-mod-template.yaml
