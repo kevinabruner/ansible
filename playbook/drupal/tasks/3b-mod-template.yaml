@@ -1,0 +1,28 @@
+- name: "Identify vmid for {{ current_app }}"
+  set_fact:
+    template_vmid: "{{ hostvars[groups['repo_' + current_app][0]]['custom_fields']['vmid'] ~ '0' }}"
+
+- name: "Sanitization and Templating for {{ current_app }}"
+  block:
+    - name: "Ensure VM {{ template_vmid }} is running"
+      shell: "qm set {{ template_vmid }} --agent 1 && qm start {{ template_vmid }}"
+
+    - name: "Wait for Guest Agent"
+      shell: "qm guest exec {{ template_vmid }} -- uptime"
+      register: agent_check
+      until: agent_check.rc == 0
+      retries: 30
+      delay: 10
+
+    - name: "Run Sanitization Scripts"
+      shell: "qm guest exec {{ template_vmid }} -- /bin/sh -c '{{ item }}'"
+      loop:
+        - "cloud-init clean --logs"
+        - "truncate -s 0 /etc/machine-id"
+        - "rm -f /etc/ssh/ssh_host_*"
+
+    - name: "Power down and convert to Template"
+      shell: |
+        qm shutdown {{ template_vmid }}
+        while [ "$(qm status {{ template_vmid }})" != "status: stopped" ]; do sleep 5; done
+        qm template {{ template_vmid }}
