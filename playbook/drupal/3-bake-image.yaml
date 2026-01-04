@@ -7,7 +7,22 @@
   tasks:
     - name: Identify target sites
       set_fact:
-        app_list: "{{ [target_app] if target_app is defined else (groups['role_drupal'] | map('extract', hostvars, 'group_names') | flatten | select('match', '^repo_') | map('replace', 'repo_', '') | unique | list) }}"
+        app_list: >-
+          {% if target_app is defined %}
+            {{ [target_app] }}
+          {% else %}
+            {{ groups['role_drupal'] 
+               | map('extract', hostvars, 'group_names') 
+               | flatten 
+               | select('match', '^repo_') 
+               | map('replace', 'repo_', '') 
+               | unique 
+               | list }}
+          {% endif %}
+
+    - name: Ensure app_list is is a lists
+      set_fact:
+        app_list: "{{ app_list | from_yaml }}"
 
     - name: Ensure proxmox_nodes is a list
       set_fact:
