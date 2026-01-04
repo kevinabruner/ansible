@@ -29,7 +29,7 @@
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
   tasks:
-    - name: Run deployment tasks
+    - name: Clone, configure and start prod vm (Deployment)
       include_tasks: tasks/4a-deploy-prod-images.yaml
       loop: "{{ hostvars['localhost']['app_list'] }}"
       loop_control:
