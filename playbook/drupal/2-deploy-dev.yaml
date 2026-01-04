@@ -10,27 +10,26 @@
   
   tasks:
     - name: Install apt packages
-      apt:
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - mysql-client
+          - php
+          - php-gd
+          - php-pdo
+          - php-mysql
+          - php-dom
+          - php-mbstring
+          - php-curl
+          - ncdu
+          - gh
+          - vim
+          - nfs-common
+          - htop
+          - qemu-guest-agent
+          - ceph-common
+        state: present
         update_cache: yes
-        name: "{{ item }}"
-      loop:
-        - apache2
-        - mysql-client
-        - php
-        - php-gd
-        - php-pdo
-        - php-mysql
-        - php-dom
-        - php-mbstring
-        - php-curl
-        - ncdu
-        - gh        
-        - vim
-        - nfs-common
-        - htop   
-        - qemu-guest-agent
-        - ceph-common
-      become: true
       
     - name: Ensure kevin is in the www-data group
       ansible.builtin.user:
