@@ -1,4 +1,3 @@
----
 - name: "Rebuild and Configure: {{ inventory_hostname }}"
   when: "'repo_' + current_app in group_names"
   block:
@@ -17,17 +16,9 @@
         port: 22
         state: started
         delay: 20
-        timeout: 300
+        timeout: 300        
 
-    # --- Configuration Phase (Runs directly on the host) ---
-    - name: "Services: Configure Apache2 on {{ inventory_hostname }}"
-      become: true
-      ansible.builtin.service:
-        name: apache2
-        enabled: yes
-        state: stopped
-
-    - name: "Drupal: Deploy settings.php"
+    - name: "Deploy settings.php"
       become: true
       ansible.builtin.template:
         src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
@@ -46,8 +37,9 @@
         job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
         user: root
 
-    - name: "Services: Start apache"
+    - name: "Enable and start apache"
       become: true
       ansible.builtin.systemd:
         name: apache2
+        enabled: true
         state: started
