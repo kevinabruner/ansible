@@ -1,4 +1,4 @@
-- name: "Check for VM {{ source_vmid }} on {{ node_item }}"
+- name: "Check for VM {{ source_vmid }} on {{ node_item }}, then continue only if found"
   delegate_to: "{{ node_item }}"
   remote_user: root
   shell: "qm config {{ source_vmid }}"
@@ -8,8 +8,8 @@
   when: not bake_found | bool
 
 
-- name: "Perform Migration and Bake"
-  include_tasks: tasks/inner-migrate-and-bake.yaml
+- name: "Delete, Bake and Migrate"
+  include_tasks: tasks/3c-del-bake-migrate.yaml
   when: 
     - not bake_found | bool
     - vm_check.rc is defined and vm_check.rc == 0

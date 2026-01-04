@@ -1,4 +1,4 @@
-- name: "STARTING BAKE FOR: {{ current_app }}"
+- name: "Setting VMID for {{ current_app }}"
   set_fact:
     bake_found: false      
     source_vmid: >-
@@ -8,16 +8,16 @@
         | first 
       }}
 
-- name: "Set Template ID for {{ current_app }}"
+- name: "Set Template ID for {{ current_app }} from {{ current_app }} {{ source_vmid }}"
   set_fact:
     template_vmid: "{{ source_vmid ~ '0' }}"
 
-- name: "PHASE 1: Search and Clone for {{ current_app }}"
-  include_tasks: 3a-create-template.yaml
+- name: "PHASE 1: Search and Clone for dev instance of {{ current_app }}"
+  include_tasks: 3b-check-for-vmid.yaml
   loop: "{{ hostvars['localhost']['proxmox_nodes'] }}"
   loop_control:
     loop_var: node_item
 
 - name: "PHASE 2: Sanitize on PVE for {{ current_app }}"
-  include_tasks: 3b-mod-template.yaml
+  include_tasks: 3d-mod-template.yaml
   when: bake_found | bool

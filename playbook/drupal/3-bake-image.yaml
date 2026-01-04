@@ -5,7 +5,7 @@
     - vars.yaml
     - vault.yaml
   tasks:
-    - name: Identify target sites
+    - name: Identify target sites. If no repo provided, then use all of them.
       set_fact:
         app_list: >-
           {% if target_app is defined %}
@@ -28,19 +28,19 @@
       set_fact:
         proxmox_nodes: "{{ groups['role_proxmox_host'] }}"
 
-    - name: Debug - Apps to be processed
+    - name: Display apps to be processed
       debug:
         msg: "The following apps will be baked: {{ app_list }}"
 
-- name: PHASE 1 Locate, Clone, and Migrate
+- name: Intiate loop for this app
   hosts: localhost
   gather_facts: false
   vars_files:
     - vars.yaml
     - vault.yaml
   tasks:
-    - name: Process each app individually
-      include_tasks: tasks/3-bake-logic-bridge.yaml
+    - name: Loop through each identified app
+      include_tasks: tasks/3a-bake-app-bridge.yaml
       loop: "{{ app_list }}"
       loop_control:
         loop_var: current_app
