@@ -1,6 +1,7 @@
 # Deploying Drupal applications using Ansible
 - These playbooks are designed to manage Drupal applications distributed over multiple highly-available virtual machines in a proxmox environment. 
-- The source-of-truth for this is my Netbox server which pulls all server configuration data.
+- The source-of-truth for this is my **Netbox** server which pulls all server configuration data.
+- The IaC provider is **Terraform** which also pulls all of its source information from Netbox. 
 
 ## Deployment steps
 A custom field called "repo" for is set for all Drupal VMs in my netbox.
