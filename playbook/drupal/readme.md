@@ -21,7 +21,7 @@ To limit this, the `target_app` variable should be passed to every playbook on e
   - e.g. `ansible-playbook playbook/drupal/1-build-composer.yaml -e "target_app='recursioncomic'"`
 
 ## Playbook steps
-1. Create your dev machines by using [netbox](https://netbox.thejfk.ca) (internal link only!) and then deploy them using the [Terraform server](https://github.com/kevinabruner/terraform) (private repo, for now).
+1. Create your dev machines by using [netbox](https://netbox.thejfk.ca) (internal link only!) and then deploy them using the [Terraform server](https://github.com/kevinabruner/terraform).
   - Optionally destroy and recreate blank dev machines by running `ansible-playbook playbook/drupal/0-wipe-dev.yaml`
 2. On the Ansible controller, first run the build.yaml playbook to build the composer files into a Drupal application. This will run locally on your Ansible controller.
     - `ansible-playbook playbook/drupal/1-build-composer.yaml`
