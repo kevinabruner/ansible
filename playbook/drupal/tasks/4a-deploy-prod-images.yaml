@@ -1,0 +1,45 @@
+- name: "Rebuild and Configure: {{ inventory_hostname }}"
+  when: "'repo_' + current_app in group_names"
+  block:
+    - name: "Infrastructure: Taint and Apply for {{ inventory_hostname }}"
+      delegate_to: terraform
+      shell: |
+        terraform taint 'module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]'
+        terraform apply -target='module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]' -auto-approve
+      args:
+        chdir: "/home/kevin/terraform"
+
+    - name: "Stability: Wait for {{ inventory_hostname }} SSH"
+      delegate_to: localhost
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        state: started
+        delay: 20
+        timeout: 300        
+
+    - name: "Deploy settings.php"
+      become: true
+      ansible.builtin.template:
+        src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
+        dest: "/var/www/html/sites/default/settings.php"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: "Restart apache"
+      become: true
+      ansible.builtin.systemd:
+        name: apache2
+        enabled: true
+        state: restarted
+
+    - name: "Cron: Create staggered rsync backup"
+      become: true
+      ansible.builtin.cron:
+        name: "Backup CephFS to NFS"        
+        hour: "{{ (3 + groups['repo_' + current_app].index(inventory_hostname)) % 24 }}"
+        minute: "0"
+        job: "rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
+        user: root
+
