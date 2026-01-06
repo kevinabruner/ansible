@@ -1,4 +1,4 @@
-- name: "Gets the first vm id (alphabetically) from the intersection of the env_dev group and the {{ current_app }}'s repository"
+- name: "Gets the first vm id (alphabetically) from the intersection of the env_dev group and the {{ current_app }}'s repo members"
   set_fact:
     bake_found: false              
     source_vmid: >-

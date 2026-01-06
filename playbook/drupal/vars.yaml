@@ -20,3 +20,4 @@ nfs_options:
 ceph_monitors: "192.168.11.11:6789,192.168.11.12:6789,192.168.11.13:6789"
 ceph_user: "admin"
 ceph_target_dir: /var/www/html/sites/default/files
+terraform_target_vm: proxmox_vm_qemu.proxmox_vms["{{ inventory_hostname }}"]
