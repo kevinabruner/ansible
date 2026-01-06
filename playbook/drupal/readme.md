@@ -1,0 +1,32 @@
+# Deploying Drupal applications using Ansible
+- These playbooks are designed to manage Drupal applications distributed over multiple highly-available virtual machines in a proxmox environment. 
+- The source-of-truth for this is my Netbox server which pulls all server configuration data.
+
+## Deployment steps
+A custom field called "repo" for is set for all Drupal VMs in my netbox.
+Currently these applications are:
+- [Recursioncomic.com](https://recursioncomic.com)
+  - [GitHub Link](https://github.com/kevinabruner/recursioncomic)
+- [Nerdperk.ca](https://nerdperk.ca)
+  - [GitHub Link](https://github.com/kevinabruner/nerdperk)
+- [Dan's blog template](https://koscinski.thejfk.ca) (WIP)
+  - [GitHub Link](https://github.com/kevinabruner/koscinski)
+
+## Scoping your play
+These playbooks are designed to manage any number of Drupal websites. As such, running these playbooks without providing any variables will result in the playbook running for _all_ applications with the "Drupal" vm role in Netbox.
+To limit this, the `target_app` variable should be passed to every playbook on every run. The argument after any playbook should be:
+- `-e "target_app='[--REPOSITORY--]'"`
+- Where [--REPOSITORY--] is the GitHub repository name of the Drupal website in question.
+  - e.g. `ansible-playbook playbook/drupal/1-build-composer.yaml -e "target_app='recursioncomic'"`
+
+## Playbook steps
+1. Create your dev machines by using [netbox](https://netbox.thejfk.ca) (internal link only!) and then deploy them using the [Terraform server](https://github.com/kevinabruner/terraform) (private repo, for now).
+  a. Optionally destroy and recreate blank dev machines by running `ansible-playbook playbook/drupal/0-wipe-dev.yaml`
+2. On the Ansible controller, first run the build.yaml playbook to build the composer files into a Drupal application. This will run locally on your Ansible controller.
+    - `ansible-playbook playbook/drupal/1-build-composer.yaml`
+3. Once Drupal is built, you can deploy all of its files to your dev servers.
+    - `ansible-playbook playbook/drupal/2-deploy-dev.yaml`
+4. If your dev servers work the way you like, you then bake an image from the 1st dev server
+    - `ansible-playbook playbook/drupal/3-bake-image.yaml`
+5. Once your image is ready, you may destroy, rebuild and reconfigure them in prod one at a time
+    - `ansible-playbook playbook/drupal/4-deploy-prod.yaml`
