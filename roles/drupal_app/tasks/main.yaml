@@ -1,0 +1,39 @@
+- name: Detect App Name
+  ansible.builtin.set_fact:
+    current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
+
+- name: Clean web root
+  ansible.builtin.file:
+    path: /var/www/html
+    state: absent
+  become: true
+
+- name: Sync Drupal Core and Vendor
+  ansible.posix.synchronize:
+    src: "{{ git_dir }}/.build/{{ item.src }}/"
+    dest: "/var/www/{{ item.dest }}/"
+    delete: yes
+    rsync_opts: "{{ item.opts | default([]) }}"
+  loop:
+    - { src: "html", dest: "html", opts: ["--exclude=sites/default/files", "--exclude=sites/default/settings.php"] }
+    - { src: "vendor", dest: "vendor" }
+  become: true
+
+- name: Deploy settings.php and Apache Vhost
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: www-data
+    group: www-data
+  loop:
+    - { src: "settings.php.j2", dest: "/var/www/html/sites/default/settings.php" }
+    - { src: "haproxy-target.conf.j2", dest: "/etc/apache2/sites-available/haproxy-target.conf" }
+  notify: Restart Apache
+  become: true
+
+- name: Enable Site in Apache
+  ansible.builtin.command: a2ensite haproxy-target
+  register: ensite_result
+  changed_when: "'Enabling site' in ensite_result.stdout"
+  notify: Restart Apache
+  become: true
