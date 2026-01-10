@@ -1,5 +1,7 @@
-- name: Runs dev and prod pipelines. Only use in dire circumstances
+- name: Runs dev and prod pipelines and updates infra. Only use in dire circumstances
   hosts: localhost
+- name: Import infrastructure playbook
+  import_playbook: update-infra.yaml 
 - name: Import "Full dev pipeline" playbook
   import_playbook: ./full-dev-pipeline.yaml
 - name: Import "Full prod pipeline" playbook
