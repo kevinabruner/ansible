@@ -2,7 +2,7 @@
   become: true
   become_user: www-data
   ansible.builtin.shell:
-    cmd: "../../vendor/bin/drush {{ item }}"
+    cmd: "/var/www/vendor/drush/drush/drush {{ item }}"
     chdir: "/var/www/html/sites/default"
   loop:
     - "state:set system.maintenance_mode 1"
