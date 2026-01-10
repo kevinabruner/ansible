@@ -38,6 +38,10 @@
   vars_files:
     - vars.yaml
     - vault.yaml
+  vars:
+    # Force these for any task in this play that delegates to Proxmox
+    ansible_user: root
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
   tasks:
     - name: Loop through each identified app
       include_tasks: tasks/3a-bake-app-bridge.yaml
