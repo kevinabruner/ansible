@@ -22,7 +22,7 @@
     - name: "Deploy settings.php"
       become: true
       ansible.builtin.template:
-        src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
+        src: "/home/{{ ansible_user }}/{{ current_app }}/templates/settings.php.j2"
         dest: "/var/www/html/sites/default/settings.php"
         owner: www-data
         group: www-data
