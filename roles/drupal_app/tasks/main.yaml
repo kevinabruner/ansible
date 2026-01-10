@@ -54,5 +54,9 @@
   ansible.builtin.command: a2ensite haproxy-target
   register: ensite_result
   changed_when: "'Enabling site' in ensite_result.stdout"
+  become: true
+
+- name: Ensure default Apache site is disabled
+  ansible.builtin.command: a2dissite 000-default.conf
   notify: Restart Apache
   become: true
