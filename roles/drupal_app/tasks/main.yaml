@@ -1,7 +1,3 @@
-- name: Detect App Name
-  ansible.builtin.set_fact:
-    current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
-
 - name: Clean web root
   ansible.builtin.file:
     path: /var/www/html
