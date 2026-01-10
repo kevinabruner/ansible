@@ -1,7 +1,25 @@
+- name: Unmount storage before cleanup
+  ansible.posix.mount:
+    path: "{{ item }}"
+    state: unmounted
+  loop:
+    - "{{ ceph_target_dir }}"
+    - "{{ nfs_target_dir }}"
+  become: true
+
 - name: Clean web root
   ansible.builtin.file:
     path: /var/www/html
     state: absent
+  become: true
+
+- name: Re-create web root directory
+  ansible.builtin.file:
+    path: /var/www/html
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
   become: true
 
 - name: Sync Drupal Core and Vendor
