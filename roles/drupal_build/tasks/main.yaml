@@ -7,19 +7,19 @@
   block:
     - name: Prepare build directory
       ansible.builtin.file:
-        path: "{{ git_dir }}/{{ detected_repo }}/.build"
+        path: "{{ build_base_path }}/{{ detected_repo }}/.build"
         state: "{{ item }}"
       loop: [absent, directory]
 
     - name: Copy composer file
       ansible.builtin.copy:
-        src: "{{ git_dir }}/{{ detected_repo }}/drupal/composer.json"
-        dest: "{{ git_dir }}/{{ detected_repo }}/.build/composer.json"
+        src: "{{ build_base_path }}/{{ detected_repo }}/drupal/composer.json"
+        dest: "{{ build_base_path }}/{{ detected_repo }}/.build/composer.json"
 
     - name: Build composer project
       community.general.composer:
         command: install
-        working_dir: "{{ git_dir }}/{{ detected_repo }}/.build"
+        working_dir: "{{ build_base_path }}/{{ detected_repo }}/.build"
         optimize_autoloader: yes
       register: composer_output
 
