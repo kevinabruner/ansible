@@ -1,11 +1,8 @@
 - name: Build Drupal centrally
-  # If target_app is provided, target that group, otherwise target all Drupal repos in dev
   hosts: "{{ target_app | default('role_drupal:&env_dev') }}"
   gather_facts: false
-  
   tasks:
     - name: Run the build role
-      # We use run_once so it only builds once per repo group on localhost
-      ansible.builtin.include_role:
+      include_role:
         name: drupal_build
       run_once: true
