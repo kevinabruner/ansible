@@ -1,42 +1,75 @@
-- name: "Ensure Source VM is stopped"
-  community.general.proxmox_kvm:
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_token_id }}"
-    api_token_secret: "{{ proxmox_token_secret }}"
-    api_host: "{{ pve_source_node }}"
-    vmid: "{{ vmid_to_clone }}"
-    state: stopped
-    timeout: 90
-  delegate_to: localhost
+---
+# Step 1: Ensure the source VM is stopped before cloning
+- name: "Ensure Source VM {{ vmid_to_clone }} is stopped"
+  delegate_to: "{{ pve_source_node }}"
+  remote_user: root
+  shell: "/usr/sbin/qm stop {{ vmid_to_clone }} && /usr/sbin/qm wait {{ vmid_to_clone }}"
+  failed_when: false
 
-- name: "Clean up existing template on {{ pve_target_node }}"
+# Step 2: Prepare the storage on the target node (pve)
+- name: "Clean up existing template {{ new_template_id }} on {{ pve_target_node }}"
   delegate_to: "{{ pve_target_node }}"
   remote_user: root
-  shell: "qm destroy {{ new_template_id }} --purge || true"
+  shell: "/usr/sbin/qm destroy {{ new_template_id }} --purge || true"
 
-- name: "Clone VM {{ vmid_to_clone }} to {{ new_template_id }}"
+# Step 3: Clone from Source Node to the Template ID
+- name: "Clone {{ vmid_to_clone }} to {{ new_template_id }}"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
   shell: >
-    qm clone {{ vmid_to_clone }} {{ new_template_id }} 
+    /usr/sbin/qm clone {{ vmid_to_clone }} {{ new_template_id }} 
     --full --name {{ current_app }}-golden 
     --storage truenas-nfs
 
-- name: "Migrate to {{ pve_target_node }} if necessary"
+# Step 4: Migrate to the Master node (pve) if it was cloned elsewhere
+- name: "Migrate {{ current_app }} template to {{ pve_target_node }}"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
-  shell: "qm migrate {{ new_template_id }} {{ pve_target_node }}"
+  shell: "/usr/sbin/qm migrate {{ new_template_id }} {{ pve_target_node }}"
   when: pve_source_node != pve_target_node
 
-- name: "Finalize: Convert to Template"
+# Step 5: Sanitization Block (Requires VM to be running)
+- name: "Sanitization for {{ current_app }}"
   delegate_to: "{{ pve_target_node }}"
   remote_user: root
-  shell: "qm template {{ new_template_id }}"
+  block:
+    - name: "Enable Agent and Start VM {{ new_template_id }}"
+      shell: |
+        /usr/sbin/qm set {{ new_template_id }} --agent 1
+        /usr/sbin/qm start {{ new_template_id }}
 
-- name: "Restart Source Dev VM"
-  community.general.proxmox_kvm:
-    api_host: "{{ pve_source_node }}"
-    api_user: "{{ proxmox_api_user }}"
-    vmid: "{{ vmid_to_clone }}"
-    state: started
-  delegate_to: localhost
+    - name: "Wait for QEMU Guest Agent"
+      shell: "/usr/sbin/qm guest exec {{ new_template_id }} -- uptime"
+      register: agent_check
+      until: agent_check.rc == 0
+      retries: 30
+      delay: 5
+
+    - name: "Execute Sanitization via Guest Agent"
+      shell: "/usr/sbin/qm guest exec {{ new_template_id }} -- /bin/sh -c '{{ item }}'"
+      loop:
+        - "cloud-init clean --logs"
+        - "truncate -s 0 /etc/machine-id"
+        - "rm -f /etc/ssh/ssh_host_*"
+
+    - name: "Graceful Shutdown"
+      shell: "/usr/sbin/qm shutdown {{ new_template_id }}"
+
+    - name: "Wait for VM to stop"
+      shell: "/usr/sbin/qm status {{ new_template_id }}"
+      register: vm_status
+      until: "'status: stopped' in vm_status.stdout"
+      retries: 20
+      delay: 5
+
+# Step 6: Final conversion
+- name: "Convert {{ new_template_id }} to Template"
+  delegate_to: "{{ pve_target_node }}"
+  remote_user: root
+  shell: "/usr/sbin/qm template {{ new_template_id }}"
+
+# Step 7: Put Dev back online
+- name: "Restart Source Dev VM {{ vmid_to_clone }}"
+  delegate_to: "{{ pve_source_node }}"
+  remote_user: root
+  shell: "/usr/sbin/qm start {{ vmid_to_clone }}"
