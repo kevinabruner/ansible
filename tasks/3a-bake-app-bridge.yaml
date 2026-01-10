@@ -18,13 +18,16 @@
     template_vmid: "{{ source_vmid ~ '0' }}"
 
 - name: "Locate {{ current_app }} on Proxmox Cluster"
+  # This is the critical change: 
   delegate_to: "{{ item }}"
-  # We use the full path to avoid PATH issues
+  vars:
+    ansible_user: root
+    ansible_ssh_private_key_file: "/home/kevin/.ssh/id_rsa" # Ensure this points to your root-capable key
+  # -------------------------
   shell: "/usr/sbin/qm status {{ source_vmid }}"
   register: locate_check
   failed_when: false
   changed_when: false
-  # This prevents the whole play from dying if NUC2 is grumpy
   ignore_unreachable: true 
   loop: "{{ groups['role_proxmox_host'] }}"
 
@@ -41,6 +44,8 @@
   include_role:
     name: proxmox_imaging
   vars:
+    # Pass the working connection vars into the role too
+    ansible_user: root
     pve_source_node: "{{ bake_source_node }}"
     pve_target_node: "pve"
     vmid_to_clone: "{{ source_vmid }}"
