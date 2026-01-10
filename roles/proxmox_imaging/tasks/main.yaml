@@ -11,14 +11,8 @@
   delegate_to: "{{ pve_target_node }}"
   remote_user: root
   shell: |
-    # 1. Force remove the VM config if it exists
     rm -f /etc/pve/qemu-server/{{ new_template_id }}.conf
-    
-    # 2. Manually delete the disk directory on the NFS share to prevent "File exists" errors
-    # Adjust the path if your storage mount point is different
     rm -rf /mnt/pve/truenas-nfs/images/{{ new_template_id }}
-    
-    # 3. Tell Proxmox to forget about the VM ID (clean up cluster lock)
     qm destroy {{ new_template_id }} --purge || true
   failed_when: false
   register: cleanup_result
