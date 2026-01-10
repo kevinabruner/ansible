@@ -1,10 +1,24 @@
-- name: "Reset find flag for {{ current_app }}"
+---
+- name: "Identify Source VMID for {{ current_app }}"
   set_fact:
     bake_source_node: ""
-    source_vmid: "{{ app_configs[current_app].dev_vmid }}"
-    template_vmid: "{{ app_configs[current_app].template_id }}"
+    # Your intersection logic to find the VMID from inventory facts
+    source_vmid: >-
+      {{ 
+        (
+          groups['repo_' + current_app] | 
+          intersect(groups['env_dev']) | 
+          sort
+        ) | 
+        map('extract', hostvars, ['custom_fields', 'vmid']) | 
+        first 
+      }}
 
-- name: "Locate {{ current_app }} (VM {{ source_vmid }}) on Proxmox Cluster"
+- name: "Set Template ID for {{ current_app }} from {{ current_app }} {{ source_vmid }}"
+  set_fact:
+    template_vmid: "{{ source_vmid ~ '0' }}"
+
+- name: "Locate {{ current_app }} on Proxmox Cluster"
   delegate_to: "{{ item }}"
   remote_user: root
   shell: "qm status {{ source_vmid }}"
@@ -12,23 +26,20 @@
   failed_when: false
   changed_when: false
   loop: "{{ groups['role_proxmox_host'] }}"
-  when: bake_source_node == ""
 
 - name: "Set Source Node Fact"
   set_fact:
     bake_source_node: "{{ item.item }}"
   loop: "{{ locate_check.results }}"
-  when: 
-    - item.rc is defined 
-    - item.rc == 0
+  when: item.rc == 0
   no_log: true
 
-- name: "Stop VM and Bake Template"
+- name: "Initiate Role"
   include_role:
     name: proxmox_imaging
   vars:
     pve_source_node: "{{ bake_source_node }}"
-    pve_target_node: "pve" # Your 'Golden' storage node
+    pve_target_node: "pve"
     vmid_to_clone: "{{ source_vmid }}"
     new_template_id: "{{ template_vmid }}"
   when: bake_source_node != ""
