@@ -4,6 +4,12 @@
     - vars.yaml
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
+    
+  pre_tasks:
+    - name: Set current_app fact for all roles
+      ansible.builtin.set_fact:
+        current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
+
   roles:
     - role: common_web      # Installs Apache, PHP, system tools
     - role: drupal_storage  # Handles NFS/Ceph mounts
