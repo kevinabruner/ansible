@@ -4,7 +4,7 @@ This controls all my software.
 # .bashrc
 Put this at the end, or you'll never access the inventory token
 ```
-VAULT_PATH="/home/kevin/ansible/playbook/drupal/vault.yaml"
+VAULT_PATH="/home/kevin/ansible/vault.yaml"
 PASS_PATH="/home/kevin/.vaultpass"
 
 if [ -f "$VAULT_PATH" ] && [ -f "$PASS_PATH" ]; then
@@ -40,16 +40,16 @@ These playbooks are designed to manage any number of Drupal websites. As such, r
 To limit this, the `target_app` variable should be passed to every playbook on every run. The argument after any playbook should be:
 - `-e "target_app='[--REPOSITORY--]'"`
 - Where [--REPOSITORY--] is the GitHub repository name of the Drupal website in question.
-  - e.g. `ansible-playbook playbook/drupal/1-build-composer.yaml -e "target_app='recursioncomic'"`
+  - e.g. `ansible-playbook 1-build-composer.yaml -e "target_app='recursioncomic'"`
 
 ## Playbook steps
 1. Create your dev machines by using [netbox](https://netbox.thejfk.ca) (internal link only!) and then deploy them using the [Terraform server](https://github.com/kevinabruner/terraform).
-  - Optionally destroy and recreate blank dev machines by running `ansible-playbook playbook/drupal/0-wipe-dev.yaml`
+  - Optionally destroy and recreate blank dev machines by running `ansible-playbook 0-wipe-dev.yaml`
 2. On the Ansible controller, first run the build.yaml playbook to build the composer files into a Drupal application. This will run locally on your Ansible controller.
-    - `ansible-playbook playbook/drupal/1-build-composer.yaml`
+    - `ansible-playbook 1-build-composer.yaml`
 3. Once Drupal is built, you can deploy all of its files to your dev servers.
-    - `ansible-playbook playbook/drupal/2-deploy-dev.yaml`
+    - `ansible-playbook 2-deploy-dev.yaml`
 4. If your dev servers work the way you like, you then bake an image from the 1st dev server
-    - `ansible-playbook playbook/drupal/3-bake-image.yaml`
+    - `ansible-playbook 3-bake-image.yaml`
 5. Once your image is ready, you may destroy, rebuild and reconfigure them in prod one at a time
-    - `ansible-playbook playbook/drupal/4-deploy-prod.yaml`
+    - `ansible-playbook 4-deploy-prod.yaml`
