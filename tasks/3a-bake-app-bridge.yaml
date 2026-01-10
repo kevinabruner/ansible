@@ -1,43 +1,30 @@
----
 - name: "Identify Source VMID for {{ current_app }}"
   set_fact:
     bake_source_node: ""
-    # Your intersection logic to find the VMID from inventory facts
-    source_vmid: >-
-      {{ 
-        (
-          groups['repo_' + current_app] | 
-          intersect(groups['env_dev']) | 
-          sort
-        ) | 
-        map('extract', hostvars, ['custom_fields', 'vmid']) | 
-        first 
-      }}
-
-- name: "Set Template ID for {{ current_app }} from {{ current_app }} {{ source_vmid }}"
-  set_fact:
-    template_vmid: "{{ source_vmid ~ '0' }}"
+    source_vmid: "{{ (groups['repo_' + current_app] | intersect(groups['env_dev']) | sort) | map('extract', hostvars, ['custom_fields', 'vmid']) | first }}"
+    template_vmid: "{{ (source_vmid | int) + 8000 }}"
 
 - name: "Locate {{ current_app }} on Proxmox Cluster"
   delegate_to: "{{ item }}"
-  # Ensure we have the right path and permissions
-  become: true 
+  # We use the full path to avoid PATH issues
   shell: "/usr/sbin/qm status {{ source_vmid }}"
   register: locate_check
   failed_when: false
   changed_when: false
+  # This prevents the whole play from dying if NUC2 is grumpy
+  ignore_unreachable: true 
   loop: "{{ groups['role_proxmox_host'] }}"
-  # Add this to ignore the hosts that are currently down/unreachable
-  ignore_unreachable: true
 
 - name: "Set Source Node Fact"
   set_fact:
     bake_source_node: "{{ item.item }}"
-  loop: "{{ locate_check.results }}"
-  when: item.rc == 0
+  loop: "{{ locate_check.results | default([]) }}"
+  when: 
+    - item.rc is defined 
+    - item.rc == 0
   no_log: true
 
-- name: "Initiate Role"
+- name: "Validate and Initiate Role"
   include_role:
     name: proxmox_imaging
   vars:
