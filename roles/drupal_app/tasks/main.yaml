@@ -24,7 +24,7 @@
 
 - name: Sync Drupal Core and Vendor
   ansible.posix.synchronize:
-    src: "{{ git_dir }}/.build/{{ item.src }}/"
+    src: "{{ build_base_path }}/{{ current_app }}/.build/{{ item.src }}/"
     dest: "/var/www/{{ item.dest }}/"
     delete: yes
     rsync_opts: "{{ item.opts | default([]) }}"
@@ -35,7 +35,7 @@
 
 - name: Copy theme(s)
   ansible.builtin.copy:
-    src: "{{ git_dir }}/drupal/themes/"
+    src: "{{ build_base_path }}/{{ current_app }}/drupal/themes/"
     dest: "/var/www/html/themes/contrib/"
 
 - name: Deploy settings.php and Apache Vhost
