@@ -36,6 +36,7 @@
 - name: "Restart Source Dev VM"
   community.general.proxmox_kvm:
     api_host: "{{ pve_source_node }}"
+    api_user: "{{ proxmox_api_user }}"
     vmid: "{{ vmid_to_clone }}"
     state: started
   delegate_to: localhost
