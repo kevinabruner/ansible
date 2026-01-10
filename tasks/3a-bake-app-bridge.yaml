@@ -20,12 +20,15 @@
 
 - name: "Locate {{ current_app }} on Proxmox Cluster"
   delegate_to: "{{ item }}"
-  remote_user: root
-  shell: "qm status {{ source_vmid }}"
+  # Ensure we have the right path and permissions
+  become: true 
+  shell: "/usr/sbin/qm status {{ source_vmid }}"
   register: locate_check
   failed_when: false
   changed_when: false
   loop: "{{ groups['role_proxmox_host'] }}"
+  # Add this to ignore the hosts that are currently down/unreachable
+  ignore_unreachable: true
 
 - name: "Set Source Node Fact"
   set_fact:
