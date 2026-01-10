@@ -1,0 +1,49 @@
+- name: "Gets the first vm id (alphabetically) from the intersection of the env_dev group and the {{ current_app }}'s repository"
+  set_fact:
+    bake_found: false              
+    source_vmid: >-
+      {{ 
+        (
+          groups['repo_' + current_app] | 
+          intersect(groups['env_dev']) | 
+          sort
+        ) | 
+        map('extract', hostvars, ['custom_fields', 'vmid']) | 
+        first 
+      }}
+
+- name: "Set Template ID for {{ current_app }} from {{ current_app }} {{ source_vmid }}"
+  set_fact:
+    template_vmid: "{{ source_vmid ~ '0' }}"
+
+- name: "Locate {{ current_app }} on Proxmox Cluster"
+  delegate_to: "{{ item }}"
+  vars:
+    ansible_user: root
+    ansible_ssh_private_key_file: "/home/kevin/.ssh/id_rsa" 
+  shell: "/usr/sbin/qm status {{ source_vmid }}"
+  register: locate_check
+  failed_when: false
+  changed_when: false
+  ignore_unreachable: true 
+  loop: "{{ groups['role_proxmox_host'] }}"
+
+- name: "Set Source Node Fact"
+  set_fact:
+    bake_source_node: "{{ item.item }}"
+  loop: "{{ locate_check.results | default([]) }}"
+  when: 
+    - item.rc is defined 
+    - item.rc == 0
+  no_log: true
+
+- name: "Validate and Initiate Role"
+  include_role:
+    name: proxmox_imaging
+  vars:
+    ansible_user: root
+    pve_source_node: "{{ bake_source_node }}"
+    pve_target_node: "pve"
+    vmid_to_clone: "{{ source_vmid }}"
+    new_template_id: "{{ template_vmid }}"
+  when: bake_source_node != ""

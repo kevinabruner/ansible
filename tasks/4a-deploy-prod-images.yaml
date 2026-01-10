@@ -1,11 +1,12 @@
 - name: "Rebuild and Configure: {{ inventory_hostname }}"
   when: "'repo_' + current_app in group_names"
   block:
-    - name: "Infrastructure: Taint and Apply for {{ inventory_hostname }}"
+    - name: "Infrastructure: Force Rebuild for {{ inventory_hostname }}"
       delegate_to: terraform
       shell: |
-        terraform taint 'module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]'
-        terraform apply -target='module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]' -auto-approve
+        terraform apply \
+          -replace='proxmox_vm_qemu.proxmox_vms["{{ inventory_hostname }}"]' \
+          -auto-approve
       args:
         chdir: "/home/kevin/terraform"
 
@@ -21,7 +22,7 @@
     - name: "Deploy settings.php"
       become: true
       ansible.builtin.template:
-        src: "/home/{{ ANSIBLE_USER }}/{{ current_app }}/templates/settings.php.j2"
+        src: "/home/{{ ansible_user }}/{{ current_app }}/templates/settings.php.j2"
         dest: "/var/www/html/sites/default/settings.php"
         owner: www-data
         group: www-data

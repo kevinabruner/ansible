@@ -1,0 +1,29 @@
+- name: Install PHP and Web stack
+  ansible.builtin.apt:
+    name: "{{ php_packages + system_packages }}"
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Ensure kevin is in www-data group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: www-data
+    append: yes
+  become: true
+
+- name: Enable Apache modules
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop: [rewrite, status]
+  notify: Restart Apache
+  become: true
+
+- name: Configure Apache global options
+  ansible.builtin.replace:
+    path: /etc/apache2/apache2.conf
+    regexp: "(<Directory /var/www/>)\\n(\\s+Options Indexes FollowSymLinks\\n\\s+AllowOverride) None"
+    replace: "\\1\\n\\2 All"
+  notify: Restart Apache
+  become: true

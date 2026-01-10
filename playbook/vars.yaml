@@ -1,5 +1,0 @@
-ANSIBLE_USER: kevin
-git_dir: /home/{{ ANSIBLE_USER }}/{{ APPLICATION }}
-netbox_dns: netbox.thejfk.ca
-INTERFACE: eth0
-APPLICATION: ansible
