@@ -1,5 +1,5 @@
 - name: Parallel Deploy for Dev
-  hosts: "{{ target_app | default('role_drupal:&env_dev') }}"
+  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   vars_files:
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
