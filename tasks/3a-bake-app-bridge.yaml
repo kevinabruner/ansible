@@ -1,8 +1,21 @@
-- name: "Identify Source VMID for {{ current_app }}"
+- name: "Gets the first vm id (alphabetically) from the intersection of the env_dev group and the {{ current_app }}'s repository"
   set_fact:
-    bake_source_node: ""
-    source_vmid: "{{ (groups['repo_' + current_app] | intersect(groups['env_dev']) | sort) | map('extract', hostvars, ['custom_fields', 'vmid']) | first }}"
-    template_vmid: "{{ (source_vmid | int) + 8000 }}"
+    bake_found: false              
+    source_vmid: >-
+      {{ 
+        (
+          groups['repo_' + current_app] | 
+          intersect(groups['env_dev']) | 
+          sort
+        ) | 
+        map('extract', hostvars, ['custom_fields', 'vmid']) | 
+        first 
+      }}
+
+
+- name: "Set Template ID for {{ current_app }} from {{ current_app }} {{ source_vmid }}"
+  set_fact:
+    template_vmid: "{{ source_vmid ~ '0' }}"
 
 - name: "Locate {{ current_app }} on Proxmox Cluster"
   delegate_to: "{{ item }}"
