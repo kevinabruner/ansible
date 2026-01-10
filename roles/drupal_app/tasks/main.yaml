@@ -40,8 +40,8 @@
     owner: www-data
     group: www-data
   loop:
-    - { src: "settings.php.j2", dest: "/var/www/html/sites/default/settings.php" }
-    - { src: "haproxy-target.conf.j2", dest: "/etc/apache2/sites-available/haproxy-target.conf" }
+    - { src: "{{ drupal_template_dir }}/settings.php.j2", dest: "/var/www/html/sites/default/settings.php" }
+    - { src: "{{ drupal_template_dir }}/haproxy-target.conf.j2", dest: "/etc/apache2/sites-available/haproxy-target.conf" }
   notify: Restart Apache
   become: true
 
