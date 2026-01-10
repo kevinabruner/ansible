@@ -2,7 +2,6 @@
   hosts: localhost
   gather_facts: false
   vars_files:
-    - vars.yaml
     - vault.yaml
   tasks:
     - name: Identify target apps
@@ -30,7 +29,6 @@
   vars:
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
   vars_files:
-    - vars.yaml
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
   tasks:
@@ -44,7 +42,6 @@
 - name: Update DBs after deployment
   hosts: "role_drupal:&env_prod{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   vars_files:
-    - vars.yaml
     - vault.yaml
   tasks:
     - name: "Run Drupal Operations Role"

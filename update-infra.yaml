@@ -1,7 +1,5 @@
 - name: Update DNS, NFS and proxy configuration after netbox update
   hosts: localhost
-  vars_files:
-  - vars.yaml
 - name: Import DNS update playbook
   import_playbook: ../../pi/playbook/update-dns.yaml 
 - name: Import internal reverse proxy config playbook
