@@ -1,0 +1,41 @@
+- name: "Ensure Source VM is stopped"
+  community.general.proxmox_kvm:
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    api_host: "{{ pve_source_node }}"
+    vmid: "{{ vmid_to_clone }}"
+    state: stopped
+    timeout: 90
+  delegate_to: localhost
+
+- name: "Clean up existing template on {{ pve_target_node }}"
+  delegate_to: "{{ pve_target_node }}"
+  remote_user: root
+  shell: "qm destroy {{ new_template_id }} --purge || true"
+
+- name: "Clone VM {{ vmid_to_clone }} to {{ new_template_id }}"
+  delegate_to: "{{ pve_source_node }}"
+  remote_user: root
+  shell: >
+    qm clone {{ vmid_to_clone }} {{ new_template_id }} 
+    --full --name {{ current_app }}-golden 
+    --storage truenas-nfs
+
+- name: "Migrate to {{ pve_target_node }} if necessary"
+  delegate_to: "{{ pve_source_node }}"
+  remote_user: root
+  shell: "qm migrate {{ new_template_id }} {{ pve_target_node }}"
+  when: pve_source_node != pve_target_node
+
+- name: "Finalize: Convert to Template"
+  delegate_to: "{{ pve_target_node }}"
+  remote_user: root
+  shell: "qm template {{ new_template_id }}"
+
+- name: "Restart Source Dev VM"
+  community.general.proxmox_kvm:
+    api_host: "{{ pve_source_node }}"
+    vmid: "{{ vmid_to_clone }}"
+    state: started
+  delegate_to: localhost
