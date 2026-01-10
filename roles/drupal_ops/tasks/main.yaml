@@ -1,7 +1,6 @@
 - name: Run Drush commands
   become: true
   become_user: www-data
-  run_once: true
   ansible.builtin.shell:
     cmd: "/var/www/vendor/drush/drush/drush {{ item }}"
     chdir: "/var/www/html/sites/default"
