@@ -12,18 +12,15 @@
         first 
       }}
 
-
 - name: "Set Template ID for {{ current_app }} from {{ current_app }} {{ source_vmid }}"
   set_fact:
     template_vmid: "{{ source_vmid ~ '0' }}"
 
 - name: "Locate {{ current_app }} on Proxmox Cluster"
-  # This is the critical change: 
   delegate_to: "{{ item }}"
   vars:
     ansible_user: root
-    ansible_ssh_private_key_file: "/home/kevin/.ssh/id_rsa" # Ensure this points to your root-capable key
-  # -------------------------
+    ansible_ssh_private_key_file: "/home/kevin/.ssh/id_rsa" 
   shell: "/usr/sbin/qm status {{ source_vmid }}"
   register: locate_check
   failed_when: false
@@ -44,7 +41,6 @@
   include_role:
     name: proxmox_imaging
   vars:
-    # Pass the working connection vars into the role too
     ansible_user: root
     pve_source_node: "{{ bake_source_node }}"
     pve_target_node: "pve"
