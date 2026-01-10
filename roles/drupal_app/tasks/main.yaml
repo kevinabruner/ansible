@@ -33,6 +33,11 @@
     - { src: "vendor", dest: "vendor" }
   become: true
 
+- name: Copy theme(s)
+  ansible.builtin.copy:
+    src: "{{ git_dir }}/drupal/themes/"
+    dest: "/var/www/html/themes/contrib/"
+
 - name: Deploy settings.php and Apache Vhost
   ansible.builtin.template:
     src: "{{ item.src }}"
