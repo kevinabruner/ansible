@@ -1,6 +1,7 @@
 ansible_user: kevin
 build_base_path: "/home/{{ ansible_user }}/"
 git_dir: "{{ build_base_path }}/{{ application }}"
+drupal_template_dir: "{{ build_base_path }}/{{ current_app }}/playbook/templates/"
 netbox_dns: netbox.thejfk.ca
 interface: eth0
 application: ansible
