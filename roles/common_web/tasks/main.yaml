@@ -7,7 +7,7 @@
 
 - name: Ensure kevin is in www-data group
   ansible.builtin.user:
-    name: "{{ ANSIBLE_USER }}"
+    name: "{{ ansible_user }}"
     groups: www-data
     append: yes
   become: true

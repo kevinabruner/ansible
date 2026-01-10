@@ -1,8 +1,8 @@
-ANSIBLE_USER: kevin
-git_dir: /home/{{ ANSIBLE_USER }}/{{ current_app }}
+ansible_user: kevin
+git_dir: /home/{{ ansible_user }}/{{ current_app }}
 netbox_dns: netbox.thejfk.ca
 INTERFACE: eth0
-nfs_target_dir: /home/{{ ANSIBLE_USER }}/nfs-files
+nfs_target_dir: /home/{{ ansible_user }}/nfs-files
 nfs_server: 192.168.11.20
 nfs_share: /mnt/yes/gitbuilds/{{ current_app }}/files
 dbName: "{{ current_app }}"
