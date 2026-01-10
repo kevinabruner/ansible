@@ -1,0 +1,35 @@
+---
+- name: Drupal Maintenance Mode - On
+  community.general.drush:
+    command: state:set
+    arguments:
+      - system.maintenance_mode
+      - 1
+    drupal_root: "/var/www/html"
+  become: true
+  become_user: www-data
+
+- name: Run Database Updates (updb)
+  community.general.drush:
+    command: updatedb
+    drupal_root: "/var/www/html"
+    ansible.builtin.shell: yes
+  become: true
+  become_user: www-data
+
+- name: Rebuild Cache (cr)
+  community.general.drush:
+    command: cache:rebuild
+    drupal_root: "/var/www/html"
+  become: true
+  become_user: www-data
+
+- name: Drupal Maintenance Mode - Off
+  community.general.drush:
+    command: state:set
+    arguments:
+      - system.maintenance_mode
+      - 0
+    drupal_root: "/var/www/html"
+  become: true
+  become_user: www-data
