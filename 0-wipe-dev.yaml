@@ -2,7 +2,7 @@
   hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
   vars_files:
     - vault.yaml
-  serial: 1  
+  #serial: 1  
   tasks:
     - name: Force Terraform to recreate this specific node
       delegate_to: terraform
