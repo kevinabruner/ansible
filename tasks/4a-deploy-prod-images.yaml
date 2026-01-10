@@ -5,7 +5,7 @@
       delegate_to: terraform
       shell: |
         terraform apply \
-          -replace='module.{{ inventory_hostname }}.proxmox_vm_qemu.{{ inventory_hostname }}[0]' \
+          -replace='proxmox_vm_qemu.proxmox_vms["{{ inventory_hostname }}"]' \
           -auto-approve
       args:
         chdir: "/home/kevin/terraform"
