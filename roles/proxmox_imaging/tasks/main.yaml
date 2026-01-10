@@ -1,8 +1,8 @@
 - name: "Ensure Source VM is stopped"
   community.general.proxmox_kvm:
     api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
+    api_token_id: "{{ proxmox_token_id }}"
+    api_token_secret: "{{ proxmox_token_secret }}"
     api_host: "{{ pve_source_node }}"
     vmid: "{{ vmid_to_clone }}"
     state: stopped
