@@ -10,6 +10,11 @@
       ansible.builtin.set_fact:
         current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
 
+    - name: Verify build artifact exists
+      include_tasks: tasks/check-build-dir.yaml
+      vars:
+        target_repo_name: "{{ current_app }}"
+
   roles:
     - role: common_web      # Installs Apache, PHP, system tools
     - role: drupal_app      # Syncs files, settings.php, themes
