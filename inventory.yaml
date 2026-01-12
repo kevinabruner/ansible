@@ -3,7 +3,10 @@ api_endpoint: https://netbox.thejfk.ca
 validate_certs: True
 token: "{{ lookup('env', 'NETBOX_API_TOKEN') }}"
 config_context: True  # Changed to True to see if DNS names are stored there
-fetch_all: True      # IMPORTANT: Fetches all IP addresses, not just primary
+fetch_all: True
+compose:
+  # This creates a flat list of all IPs on the host for easy looping
+  all_ips: interfaces | map(attribute='ip_addresses') | flatten
 group_by:
   - device_roles
 use_cache: yes
