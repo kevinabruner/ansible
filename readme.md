@@ -53,3 +53,9 @@ To limit this, the `target_app` variable should be passed to every playbook on e
     - `ansible-playbook 3-bake-image.yaml`
 5. Once your image is ready, you may destroy, rebuild and reconfigure them in prod one at a time
     - `ansible-playbook 4-deploy-prod.yaml`
+
+### TO DO LIST
+- Fix pihole population to use inventory
+- fix databases (both psql and mysql)
+  - genericize playbooks for importing and exporting multiple applications
+- 
