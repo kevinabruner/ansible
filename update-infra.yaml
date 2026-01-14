@@ -8,3 +8,5 @@
   import_playbook: ../reverse-proxy/update-external-config.yaml
 - name: Import NAS nfs permissions playbook
   import_playbook: ../truenas/playbook/set-nfs-perms.yaml
+- name: Import jfkhome generation playbook
+  import_playbook: ../jfkhome/update-site.yaml
