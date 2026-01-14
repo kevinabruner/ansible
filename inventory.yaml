@@ -6,6 +6,7 @@ config_context: False
 use_cache: yes
 vm_query_filters:
   - status: 'active'
+  - status: 'paused'
 
 keyed_groups:
   - prefix: repo
