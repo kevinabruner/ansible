@@ -1,5 +1,5 @@
 - name: Update all Virtual Machines
-  hosts: all
+  hosts: repo_*
   become: true
   gather_facts: no  # Prevent SSH into non-VMs at the start
   serial: 10% 
@@ -38,6 +38,3 @@
           reboot:
             msg: "Rebooting to apply kernel updates via Ansible"
           when: reboot_required_file.stat.exists
-
-      # This is the filter that protects your Shield, AVR, and TVs
-      when: is_virtual | default(false) | bool
