@@ -1,5 +1,5 @@
 - name: Update all Virtual Machines
-  hosts: _virtual_machines  # This is a built-in NetBox plugin group
+  hosts: vms
   become: true
   serial: 10% 
   tasks:
