@@ -1,49 +1,39 @@
 - name: Update all Virtual Machines
   hosts: all
   become: true
-  gather_facts: no  
+  gather_facts: no  # Prevent SSH into non-VMs at the start
   serial: 10% 
-  pre_tasks:
-    - name: End play for non-virtual hosts
-      group_by:
-        key: "is_vm_{{ is_virtual | default(false) | bool }}"
+
   tasks:
-    - name: Update all Virtual Machines
-      hosts: all
-      become: true
-      gather_facts: no  
-      serial: 10% 
+    - name: VM Update Block
+      block:
+        - name: Gather facts for VMs only
+          setup:
 
-      tasks:
-        - name: VM Update Block
-          block:
-            - name: Gather facts for VMs
-              setup:
+        - name: Update apt cache and upgrade packages
+          apt:
+            upgrade: dist
+            update_cache: yes
+            autoremove: yes
 
-            - name: Update apt cache and upgrade packages
-              apt:
-                upgrade: dist
-                update_cache: yes
-                autoremove: yes
+        - name: Remove redundant dependencies
+          apt:
+            autoremove: yes
+            purge: yes
 
-            - name: Remove redundant dependencies
-              apt:
-                autoremove: yes
-                purge: yes
+        - name: Check if a reboot is required
+          stat:
+            path: /var/run/reboot-required
+          register: reboot_required_file
 
-            - name: Check if a reboot is required
-              stat:
-                path: /var/run/reboot-required
-              register: reboot_required_file
+        - name: Debug update status
+          debug:
+            msg: "System is up to date. Reboot required: {{ reboot_required_file.stat.exists }}"
 
-            - name: Debug update status
-              debug:
-                msg: "System is up to date. Reboot required: {{ reboot_required_file.stat.exists }}"
+        - name: Reboot the machine if kernel was updated
+          reboot:
+            msg: "Rebooting to apply kernel updates via Ansible"
+          when: reboot_required_file.stat.exists
 
-            - name: Reboot the machine if kernel was updated
-              reboot:
-                msg: "Rebooting to apply kernel updates via Ansible"
-              when: reboot_required_file.stat.exists
-
-          # This condition now applies to the ENTIRE block above
-          when: is_virtual | default(false) | bool
+      # This is the filter that protects your Shield, AVR, and TVs
+      when: is_virtual | default(false) | bool
