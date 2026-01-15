@@ -8,34 +8,42 @@
       group_by:
         key: "is_vm_{{ is_virtual | default(false) | bool }}"
   tasks:
-    - name: Update apt cache and upgrade packages
+    - name: Update all Virtual Machines
+      hosts: all
       become: true
-      apt:
-        upgrade: dist
-        update_cache: yes
-        autoremove: yes
-      when: is_virtual | bool
+      gather_facts: no  
+      serial: 10% 
 
-    - name: Remove redundant dependencies
-      apt:
-        autoremove: yes
-        purge: yes
-      when: is_virtual | bool
+      tasks:
+        - name: VM Update Block
+          block:
+            - name: Gather facts for VMs
+              setup:
 
-    - name: Check if a reboot is required
-      stat:
-        path: /var/run/reboot-required
-      register: reboot_required_file
-      when: is_virtual | bool
+            - name: Update apt cache and upgrade packages
+              apt:
+                upgrade: dist
+                update_cache: yes
+                autoremove: yes
 
-    - name: Debug update status
-      debug:
-        msg: "System is up to date. Reboot required: {{ reboot_required_file.stat.exists }}"
-      when: is_virtual | bool
+            - name: Remove redundant dependencies
+              apt:
+                autoremove: yes
+                purge: yes
 
-    - name: Reboot the machine if kernel was updated
-      reboot:
-        msg: "Rebooting to apply kernel updates via Ansible"
-      when: 
-        - reboot_required_file.stat.exists
-        - is_virtual | bool
+            - name: Check if a reboot is required
+              stat:
+                path: /var/run/reboot-required
+              register: reboot_required_file
+
+            - name: Debug update status
+              debug:
+                msg: "System is up to date. Reboot required: {{ reboot_required_file.stat.exists }}"
+
+            - name: Reboot the machine if kernel was updated
+              reboot:
+                msg: "Rebooting to apply kernel updates via Ansible"
+              when: reboot_required_file.stat.exists
+
+          # This condition now applies to the ENTIRE block above
+          when: is_virtual | default(false) | bool
