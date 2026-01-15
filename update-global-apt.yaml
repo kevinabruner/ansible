@@ -1,8 +1,7 @@
 - name: Update all Virtual Machines
   hosts: repo_*
   become: true
-  serial: 1
-
+  serial: 25%
   tasks:
     - name: VM Update Block
       block:
