@@ -2,11 +2,11 @@
   hosts: all
   become: true
   serial: 10% 
+  pre_tasks:
+    - name: End play for non-virtual hosts
+      group_by:
+        key: "is_vm_{{ is_virtual | default(false) | bool }}"
   tasks:
-    - name: Pre-flight check - Filter out physical hardware
-      meta: end_host
-      when: not (is_virtual | default(false))
-
     - name: Update apt cache and upgrade packages
       become: true
       apt:
@@ -35,5 +35,6 @@
     - name: Reboot the machine if kernel was updated
       reboot:
         msg: "Rebooting to apply kernel updates via Ansible"
-      when: reboot_required_file.stat.exists
-      when: is_virtual | bool
+      when: 
+        - reboot_required_file.stat.exists
+        - is_virtual | bool
