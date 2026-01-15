@@ -1,6 +1,7 @@
 - name: Update all Virtual Machines
   hosts: all
   become: true
+  gather_facts: no  
   serial: 10% 
   pre_tasks:
     - name: End play for non-virtual hosts
