@@ -15,6 +15,10 @@
             upgrade: dist
             update_cache: yes
             autoremove: yes
+            register: apt_res
+            until: apt_res is success
+            retries: 5
+            delay: 10
 
         - name: Remove redundant dependencies
           apt:
