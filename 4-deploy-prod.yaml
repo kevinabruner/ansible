@@ -31,9 +31,17 @@
   vars_files:
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
+  pre_tasks:
+    - name: Detect current_app from host groups
+      set_fact:
+        current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
+      failed_when: current_app is not defined
   tasks:
     - name: Clone and Configure Infrastructure
       include_tasks: tasks/4a-deploy-prod-images.yaml
+      loop: "{{ hostvars['localhost']['app_list'] }}"
+      loop_control:
+        loop_var: current_app
       when: "'repo_' + current_app in group_names"
 
 - name: Update DBs after deployment
