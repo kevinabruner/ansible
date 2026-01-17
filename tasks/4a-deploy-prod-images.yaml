@@ -1,5 +1,6 @@
 - name: "Rebuild and Configure: {{ inventory_hostname }}"
-  when: "'repo_' + current_app in group_names"
+  when: 
+    - "'env_prod' not in group names"
   block:
     - name: "Infrastructure: Force Rebuild for {{ inventory_hostname }}"
       delegate_to: terraform

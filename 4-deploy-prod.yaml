@@ -34,9 +34,6 @@
   tasks:
     - name: Clone and Configure Infrastructure
       include_tasks: tasks/4a-deploy-prod-images.yaml
-      loop: "{{ hostvars['localhost']['app_list'] }}"
-      loop_control:
-        loop_var: current_app
       when: "'repo_' + current_app in group_names"
 
 - name: Update DBs after deployment
