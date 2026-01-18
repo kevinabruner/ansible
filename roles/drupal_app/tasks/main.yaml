@@ -63,3 +63,13 @@
   ansible.builtin.command: a2dissite 000-default.conf
   notify: Restart Apache
   become: true
+
+- name: "Cron: Create staggered rsync backup (only runs on prod by checking db host variable)"
+  become: true
+  ansible.builtin.cron:
+    name: "Backup CephFS to NFS"        
+    hour: "{{ (3 + groups['repo_' + current_app].index(inventory_hostname)) % 24 }}"
+    minute: "0"
+    # Logic: Source /etc/environment, then check if the host matches before running rsync
+    job: "grep -q 'mysql_db_host=db-prod.jfkhome' /etc/environment && rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
+    user: root
