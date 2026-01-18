@@ -20,13 +20,6 @@
         delay: 20
         timeout: 300        
 
-    - name: "Restart apache"
-      become: true
-      ansible.builtin.systemd:
-        name: apache2
-        enabled: true
-        state: restarted
-
     - name: "Cron: Create staggered rsync backup"
       become: true
       ansible.builtin.cron:
