@@ -6,8 +6,10 @@
     - name: Force Terraform to recreate this specific node
       delegate_to: terraform
       shell: |
-        # Use the array syntax for the for_each resource
         terraform apply -replace='proxmox_vm_qemu.proxmox_vms["{{ inventory_hostname }}"]' -auto-approve
       args:
         chdir: "/home/kevin/terraform"
+      # Give the shell more time than the Terraform timeout
+      async: 300 
+      poll: 10
       throttle: 1
