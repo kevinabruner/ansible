@@ -1,11 +1,9 @@
-# Step 1: Ensure the source VM is stopped before cloning
 - name: "Ensure Source VM {{ vmid_to_clone }} is stopped"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
   shell: "/usr/sbin/qm stop {{ vmid_to_clone }} && /usr/sbin/qm wait {{ vmid_to_clone }}"
   failed_when: false
 
-# Step 2: Prepare the storage on the target node (pve)
 - name: "Clean up existing template {{ new_template_id }} on {{ pve_target_node }}"
   delegate_to: "{{ pve_target_node }}"
   remote_user: root
@@ -16,7 +14,6 @@
   failed_when: false
   register: cleanup_result
 
-# Step 3: Clone from Source Node to the Template ID
 - name: "Clone {{ vmid_to_clone }} to {{ new_template_id }}"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
@@ -25,7 +22,6 @@
     --full --name {{ target_app }}-golden 
     --storage truenas-nfs
 
-# Step 4: Migrate to the Master node (pve) if it was cloned elsewhere
 - name: "Migrate {{ target_app }} template to {{ pve_target_node }}"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
