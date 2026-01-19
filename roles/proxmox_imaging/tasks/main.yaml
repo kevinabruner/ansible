@@ -50,7 +50,8 @@
       loop:
         - "cloud-init clean --logs"
         - "truncate -s 0 /etc/machine-id"
-        - "rm -f /etc/ssh/ssh_host_*"
+        - "rm -f /etc/ssh/ssh_host_*"        
+        - "truncate -s 0 /etc/environment"
 
     - name: "Graceful Shutdown"
       shell: "/usr/sbin/qm shutdown {{ new_template_id }}"
