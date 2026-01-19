@@ -1,3 +1,8 @@
+- name: "Force Disk Sync on Dev VM"
+  shell: "/usr/sbin/qm guest exec {{ vmid_to_clone }} -- sync"
+  delegate_to: "{{ pve_source_node }}"
+  failed_when: false
+
 - name: "Ensure Source VM {{ vmid_to_clone }} is stopped"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
