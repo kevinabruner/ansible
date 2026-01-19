@@ -1,5 +1,5 @@
 - name: Re-deploy dev servers for fresh installation
-  hosts: "repo_nerdperk:&env_dev"
+  hosts: "role_drupal:&env_dev:&repo_{{ target_app | default('UNDEFINED') }}"
   vars_files:
     - vault.yaml
   roles:

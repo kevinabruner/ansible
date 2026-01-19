@@ -1,5 +1,5 @@
 - name: Build Drupal centrally
-  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
+  hosts: "role_drupal:&env_dev:&repo_{{ target_app | default('UNDEFINED') }}"
   gather_facts: false
   tasks:
     - name: Run the build role

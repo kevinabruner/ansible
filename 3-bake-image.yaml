@@ -1,48 +1,59 @@
-- name: Determine Drupal sites to Bake
-  hosts: localhost
-  gather_facts: false
-  vars_files:
-    - vault.yaml
-  tasks:
-    - name: Identify target sites. If no repo provided, then use all of them.
-      set_fact:
-        app_list: >-
-          {% if target_app is defined %}
-            {{ [target_app] }}
-          {% else %}
-            {{ groups['role_drupal'] 
-               | map('extract', hostvars, 'group_names') 
-               | flatten 
-               | select('match', '^repo_') 
-               | map('replace', 'repo_', '') 
-               | unique 
-               | list }}
-          {% endif %}
-
-    - name: Ensure app_list is is a lists
-      set_fact:
-        app_list: "{{ app_list | from_yaml }}"
-
-    - name: Ensure proxmox_nodes is a list
-      set_fact:
-        proxmox_nodes: "{{ groups['role_proxmox_host'] }}"
-
-    - name: Display apps to be processed
-      debug:
-        msg: "The following apps will be baked: {{ app_list }}"
-
-- name: Intiate loop for this app
+- name: Bake Application Image
   hosts: localhost
   gather_facts: false
   vars_files:
     - vault.yaml
   vars:
-    # Force these for any task in this play that delegates to Proxmox
     ansible_user: root
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+  
+  pre_tasks:
+    - name: Safety check - Ensure target_app is specified
+      ansible.builtin.assert:
+        that:
+          - target_app is defined
+          - target_app | length > 0
+        fail_msg: "You must specify a site to bake. Example: -e 'target_app=nerdperk'"
+
   tasks:
-    - name: Loop through each identified app
-      include_tasks: tasks/3a-bake-app-bridge.yaml
-      loop: "{{ app_list }}"
-      loop_control:
-        loop_var: current_app
+    - name: Identify Source VM and Template ID
+      set_fact:
+        source_host: "{{ (groups['repo_' + target_app] | intersect(groups['env_dev']) | sort) | first }}"
+      
+    - name: Set VMID Facts
+      set_fact:
+        source_vmid: "{{ hostvars[source_host]['custom_fields']['vmid'] }}"
+        template_vmid: "{{ hostvars[source_host]['custom_fields']['vmid'] ~ '0' }}"
+        # Extract the physical Proxmox node directly from inventory if available
+        # Otherwise, we fall back to your search logic
+        bake_source_node: "{{ hostvars[source_host]['proxmox_node'] | default('') }}"
+
+    - name: Locate VM on Proxmox Cluster (Only if node unknown)
+      delegate_to: "{{ item }}"
+      shell: "/usr/sbin/qm status {{ source_vmid }}"
+      register: locate_check
+      failed_when: false
+      changed_when: false
+      ignore_unreachable: true 
+      loop: "{{ groups['role_proxmox_host'] }}"
+      when: bake_source_node == ""
+
+    - name: Set Source Node Fact from Search
+      set_fact:
+        bake_source_node: "{{ item.item }}"
+      loop: "{{ locate_check.results | default([]) }}"
+      when: 
+        - bake_source_node == ""
+        - item.rc is defined and item.rc == 0
+      no_log: true
+
+    - name: Run Proxmox Imaging Role
+      include_role:
+        name: proxmox_imaging
+      vars:
+        ansible_user: root
+        pve_source_node: "{{ bake_source_node }}"
+        pve_target_node: "pve"
+        vmid_to_clone: "{{ source_vmid }}"
+        new_template_id: "{{ template_vmid }}"
+      when: bake_source_node | length > 0
