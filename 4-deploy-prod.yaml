@@ -7,9 +7,21 @@
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
   tasks:
-    # - name: Run terraform refresh on prod to overwrite from template
-    #   include_role:
-    #     name: terraform_refresh
+    - name: Run terraform refresh on prod to overwrite from template
+      include_role:
+        name: terraform_refresh
+
+    - name: Wait for server to reboot and cloud-init to finish
+      block:
+        - name: Wait for host to become reachable again
+          ansible.builtin.wait_for_connection:
+            delay: 10
+            timeout: 300
+
+        - name: Wait for cloud-init to finish
+          ansible.builtin.command: cloud-init status --wait
+          changed_when: false
+          become: true
     
     - name: Refresh database
       include_role:
