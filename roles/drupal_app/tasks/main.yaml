@@ -24,7 +24,7 @@
 
 - name: Sync Drupal Core and Vendor
   ansible.posix.synchronize:
-    src: "{{ build_base_path }}/{{ current_app }}/.build/{{ item.src }}/"
+    src: "{{ build_base_path }}/{{ target_app }}/.build/{{ item.src }}/"
     dest: "/var/www/{{ item.dest }}/"
     delete: yes
     rsync_opts: 
@@ -38,7 +38,7 @@
 
 - name: Copy theme(s)
   ansible.builtin.copy:
-    src: "{{ build_base_path }}/{{ current_app }}/drupal/themes/"
+    src: "{{ build_base_path }}/{{ target_app }}/drupal/themes/"
     dest: "/var/www/html/themes/contrib/"
 
 - name: Deploy settings.php and Apache Vhost
@@ -68,7 +68,7 @@
   become: true
   ansible.builtin.cron:
     name: "Backup CephFS to NFS"        
-    hour: "{{ (3 + groups['repo_' + current_app].index(inventory_hostname)) % 24 }}"
+    hour: "{{ (3 + groups['repo_' + target_app].index(inventory_hostname)) % 24 }}"
     minute: "0"
     # Logic: Source /etc/environment, then check if the host matches before running rsync
     job: "grep -q 'mysql_db_host=db-prod.jfkhome' /etc/environment && rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"

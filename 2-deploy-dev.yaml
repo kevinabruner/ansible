@@ -5,14 +5,14 @@
     - /home/kevin/db-server/playbook/vault.yaml
 
   pre_tasks:
-    - name: Set current_app fact for all roles
+    - name: Set target_app fact for all roles
       ansible.builtin.set_fact:
-        current_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
+        target_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
 
     - name: Verify build artifact exists
       include_tasks: tasks/check-build-dir.yaml
       vars: 
-        target_repo_name: "{{ current_app }}"
+        target_repo_name: "{{ target_app }}"
 
   roles:
     - role: common_web      # Installs Apache, PHP, system tools

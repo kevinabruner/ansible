@@ -1,5 +1,5 @@
 nfs_server: 192.168.11.20
-nfs_share: /mnt/yes/gitbuilds/{{ current_app }}/files
+nfs_share: /mnt/yes/gitbuilds/{{ target_app }}/files
 nfs_options:
   - defaults
   - x-systemd.automount
