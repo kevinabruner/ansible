@@ -23,18 +23,18 @@
   remote_user: root
   shell: >
     /usr/sbin/qm clone {{ vmid_to_clone }} {{ new_template_id }} 
-    --full --name {{ current_app }}-golden 
+    --full --name {{ target_app }}-golden 
     --storage truenas-nfs
 
 # Step 4: Migrate to the Master node (pve) if it was cloned elsewhere
-- name: "Migrate {{ current_app }} template to {{ pve_target_node }}"
+- name: "Migrate {{ target_app }} template to {{ pve_target_node }}"
   delegate_to: "{{ pve_source_node }}"
   remote_user: root
   shell: "/usr/sbin/qm migrate {{ new_template_id }} {{ pve_target_node }}"
   when: pve_source_node != pve_target_node
 
 # Step 5: Sanitization Block (Requires VM to be running)
-- name: "Sanitization for {{ current_app }}"
+- name: "Sanitization for {{ target_app }}"
   delegate_to: "{{ pve_target_node }}"
   remote_user: root
   block:
