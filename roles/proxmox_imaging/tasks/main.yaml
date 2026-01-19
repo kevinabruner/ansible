@@ -9,7 +9,7 @@
   remote_user: root
   shell: |
     rm -f /etc/pve/qemu-server/{{ new_template_id }}.conf
-    rm -rf /mnt/pve/truenas-nfs/images/{{ new_template_id }}
+    rm -rf /mnt/pve/{{ golden_storage }}/images/{{ new_template_id }}
     qm destroy {{ new_template_id }} --purge || true
   failed_when: false
   register: cleanup_result
@@ -20,7 +20,7 @@
   shell: >
     /usr/sbin/qm clone {{ vmid_to_clone }} {{ new_template_id }} 
     --full --name {{ target_app }}-golden 
-    --storage truenas-nfs
+    --storage {{ golden_storage }}
 
 - name: "Migrate {{ target_app }} template to {{ pve_target_node }}"
   delegate_to: "{{ pve_source_node }}"
