@@ -4,12 +4,6 @@
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
 
-  pre_tasks:
-    - name: Verify build artifact exists
-      include_tasks: tasks/check-build-dir.yaml
-      vars: 
-        target_repo_name: "{{ target_app }}"
-
   roles:
     - role: common_web      # Installs Apache, PHP, system tools
     - role: drupal_app      # Syncs files, settings.php, themes
