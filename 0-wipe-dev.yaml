@@ -4,4 +4,4 @@
     - vault.yaml
   roles:
     - role: terraform_refresh
-~                                    
+                                   
