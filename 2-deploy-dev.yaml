@@ -5,10 +5,6 @@
     - /home/kevin/db-server/playbook/vault.yaml
 
   pre_tasks:
-    - name: Set target_app fact for all roles
-      ansible.builtin.set_fact:
-        target_app: "{{ group_names | select('match', '^repo_') | first | replace('repo_', '') }}"
-
     - name: Verify build artifact exists
       include_tasks: tasks/check-build-dir.yaml
       vars: 
