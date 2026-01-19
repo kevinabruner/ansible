@@ -1,5 +1,5 @@
 - name: Parallel Deploy for Dev
-  hosts: "role_drupal:&env_dev:&repo_{{ target_app | default('UNDEFINED') }}"
+  hosts: "repo_{{ target_app | default('UNDEFINED') }}:&env_dev"
   vars_files:
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
@@ -11,7 +11,7 @@
 
     - name: Verify build artifact exists
       include_tasks: tasks/check-build-dir.yaml
-      vars:
+      vars: 
         target_repo_name: "{{ current_app }}"
 
   roles:
