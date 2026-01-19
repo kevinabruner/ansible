@@ -1,5 +1,7 @@
-- name: Re-deploy dev servers for fresh installation 
-  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
+- name: Re-deploy dev servers for fresh installation
+  hosts: "repo_nerdperk:&env_dev"
   vars_files:
     - vault.yaml
-  tasks:
+  roles:
+    - role: terraform_refresh
+~                                    
