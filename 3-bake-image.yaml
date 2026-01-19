@@ -1,11 +1,6 @@
 - name: Bake Application Image
   hosts: localhost
   gather_facts: false
-  vars_files:
-    - vault.yaml
-  vars:
-    ansible_user: root
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
   
   pre_tasks:
     - name: Safety check - Ensure target_app is specified
