@@ -4,6 +4,10 @@
     state: present
     update_cache: yes
   become: true
+  register: apt_result
+  until: apt_result is success
+  retries: 20      # Total attempts
+  delay: 10        # Seconds to wait between attempts (200 seconds total)
 
 - name: Ensure kevin is in www-data group
   ansible.builtin.user:
