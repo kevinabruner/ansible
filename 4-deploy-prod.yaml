@@ -7,12 +7,12 @@
     - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
   tasks:
-    - name: Clone and Configure Infrastructure
+    - name: Run terraform refresh on prod to overwrite from template
+      include_role:
+        name: terraform_refresh
+    
+    - name: Refresh database
       include_role:
         name: drupal_ops
       vars:
         target_repo: "{{ target_app }}"
-
-    - name: Run terraform refresh on prod to overwrite from template
-      include_role:
-        name: terraform_refresh
