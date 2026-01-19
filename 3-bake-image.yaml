@@ -24,28 +24,7 @@
       set_fact:
         source_vmid: "{{ hostvars[source_host]['custom_fields']['vmid'] }}"
         template_vmid: "{{ hostvars[source_host]['custom_fields']['vmid'] ~ '0' }}"
-        # Extract the physical Proxmox node directly from inventory if available
-        # Otherwise, we fall back to your search logic
-        bake_source_node: "{{ hostvars[source_host]['proxmox_node'] | default('') }}"
-
-    - name: Locate VM on Proxmox Cluster (Only if node unknown)
-      delegate_to: "{{ item }}"
-      shell: "/usr/sbin/qm status {{ source_vmid }}"
-      register: locate_check
-      failed_when: false
-      changed_when: false
-      ignore_unreachable: true 
-      loop: "{{ groups['role_proxmox_host'] }}"
-      when: bake_source_node == ""
-
-    - name: Set Source Node Fact from Search
-      set_fact:
-        bake_source_node: "{{ item.item }}"
-      loop: "{{ locate_check.results | default([]) }}"
-      when: 
-        - bake_source_node == ""
-        - item.rc is defined and item.rc == 0
-      no_log: true
+        bake_source_node: "nuc1"
 
     - name: Run Proxmox Imaging Role
       include_role:
@@ -56,4 +35,3 @@
         pve_target_node: "pve"
         vmid_to_clone: "{{ source_vmid }}"
         new_template_id: "{{ template_vmid }}"
-      when: bake_source_node | length > 0
