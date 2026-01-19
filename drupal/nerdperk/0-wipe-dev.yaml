@@ -3,4 +3,4 @@
   vars_files:
     - vault.yaml
   roles:
-    - role: terraform_refresh
+    - role: ../../terraform_refresh
