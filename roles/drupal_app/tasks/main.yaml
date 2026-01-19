@@ -70,6 +70,5 @@
     name: "Backup CephFS to NFS"        
     hour: "{{ (3 + groups['repo_' + target_app].index(inventory_hostname)) % 24 }}"
     minute: "0"
-    # Logic: Source /etc/environment, then check if the host matches before running rsync
     job: "grep -q 'environment=prod' /etc/environment && rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
     user: root
