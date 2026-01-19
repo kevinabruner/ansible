@@ -1,4 +1,4 @@
-- name: "Force Disk Sync on Dev VM"
+- name: "Force Disk Sync on Dev VM (prevents newly created files from dissappearing at shutdown)"
   shell: "/usr/sbin/qm guest exec {{ vmid_to_clone }} -- sync"
   delegate_to: "{{ pve_source_node }}"
   failed_when: false
