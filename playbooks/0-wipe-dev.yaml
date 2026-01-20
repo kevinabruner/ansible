@@ -2,5 +2,5 @@
   hosts: "repo_{{ target_app | default('UNDEFINED') }}:&env_dev"
  
   roles:
-    - role: terraform_refresh
+    - role: ../terraform_refresh
                                    
