@@ -1,7 +1,6 @@
 - name: Parallel Deploy for Dev
   hosts: "repo_{{ target_app | default('UNDEFINED') }}:&env_dev"
   vars_files:
-    - vault.yaml
     - /home/kevin/db-server/playbook/vault.yaml
 
   roles:
