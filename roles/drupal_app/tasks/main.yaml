@@ -1,3 +1,6 @@
+- name: Verify build artifact exists before proceeding
+  include_tasks: check-build-dir.yaml
+
 - name: Unmount storage before cleanup
   ansible.posix.mount:
     path: "{{ item }}"
@@ -24,10 +27,9 @@
 
 - name: Sync Drupal Core and Vendor
   ansible.posix.synchronize:
-    src: "{{ build_base_path }}/{{ current_app }}/.build/{{ item.src }}/"
+    src: "{{ build_base_path }}/{{ target_app }}/.build/{{ item.src }}/"
     dest: "/var/www/{{ item.dest }}/"
     delete: yes
-    rsync_opts: "{{ item.opts | default([]) }}"
   loop:
     - { src: "html", dest: "html", opts: ["--exclude=sites/default/files", "--exclude=sites/default/settings.php"] }
     - { src: "vendor", dest: "vendor" }
@@ -35,7 +37,7 @@
 
 - name: Copy theme(s)
   ansible.builtin.copy:
-    src: "{{ build_base_path }}/{{ current_app }}/drupal/themes/"
+    src: "{{ build_base_path }}/{{ target_app }}/drupal/themes/"
     dest: "/var/www/html/themes/contrib/"
 
 - name: Deploy settings.php and Apache Vhost
@@ -60,3 +62,12 @@
   ansible.builtin.command: a2dissite 000-default.conf
   notify: Restart Apache
   become: true
+
+- name: "Cron: Create staggered rsync backup (only runs on prod by checking db host variable)"
+  become: true
+  ansible.builtin.cron:
+    name: "Backup CephFS to NFS"        
+    hour: "{{ (3 + groups['repo_' + target_app].index(inventory_hostname)) % 24 }}"
+    minute: "0"
+    job: "grep -q 'environment=prod' /etc/environment && rsync -az --delete {{ ceph_target_dir }}/ {{ nfs_target_dir }}/"
+    user: root

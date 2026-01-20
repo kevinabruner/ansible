@@ -1,4 +1,4 @@
-- name: Runs dev and prod pipelines and updates infra. Only use in dire circumstances
+- name: Runs dev and prod Drupal pipelines including image baking. Only use in dire circumstances
   hosts: localhost
 - name: Import "Full dev pipeline" playbook
   import_playbook: ./full-dev-pipeline.yaml

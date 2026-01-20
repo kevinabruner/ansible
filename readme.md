@@ -36,8 +36,7 @@ Currently these applications are:
   - [GitHub Link](https://github.com/kevinabruner/koscinski)
 
 ## Scoping your play
-These playbooks are designed to manage any number of Drupal websites. As such, running these playbooks without providing any variables will result in the playbook running for _all_ applications with the "Drupal" vm role in Netbox.
-To limit this, the `target_app` variable should be passed to every playbook on every run. The argument after any playbook should be:
+These playbooks are designed to manage any number of Drupal websites. As such, running these playbooks without providing any variables will result in an error. The `target_app` variable is required to passed to every playbook on every run for these playbooks to work. The argument after any playbook should be:
 - `-e "target_app='[--REPOSITORY--]'"`
 - Where [--REPOSITORY--] is the GitHub repository name of the Drupal website in question.
   - e.g. `ansible-playbook 1-build-composer.yaml -e "target_app='recursioncomic'"`
@@ -53,8 +52,3 @@ To limit this, the `target_app` variable should be passed to every playbook on e
     - `ansible-playbook 3-bake-image.yaml`
 5. Once your image is ready, you may destroy, rebuild and reconfigure them in prod one at a time
     - `ansible-playbook 4-deploy-prod.yaml`
-
-### TO DO LIST
-- fix databases (both psql and mysql)
-  - genericize playbooks for importing and exporting multiple applications
-- move to cloud init templating for prod images

@@ -1,13 +1,5 @@
-- name: Re-deploy dev servers for fresh installation 
-  hosts: "role_drupal:&env_dev{% if target_app is defined %}:&repo_{{ target_app }}{% endif %}"
-  vars_files:
-    - vault.yaml
-  tasks:
-    - name: Force Terraform to recreate this specific node
-      delegate_to: terraform
-      shell: |
-        # Use the array syntax for the for_each resource
-        terraform apply -replace='proxmox_vm_qemu.proxmox_vms["{{ inventory_hostname }}"]' -auto-approve
-      args:
-        chdir: "/home/kevin/terraform"
-      throttle: 1
+- name: Re-deploy dev servers for fresh installation
+  hosts: "repo_{{ target_app | default('UNDEFINED') }}:&env_dev"
+  roles:
+    - role: terraform_refresh
+                                   
