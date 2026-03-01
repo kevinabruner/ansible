@@ -12,7 +12,7 @@ keyed_groups:
   - prefix: repo
     key: custom_fields.repos
   - prefix: env
-    key: custom_fields.dev_or_prod
+    key: custom_fields.environment
   - prefix: role
     key: device_roles
 
