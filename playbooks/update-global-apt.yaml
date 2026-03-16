@@ -1,5 +1,5 @@
 - name: Update all Virtual Machines
-  hosts: repo_*:!role_vm_template:!immich
+  hosts: repo_*:!role_vm_template:!immich:!wifi:!repo_ssvp
   become: true
   serial: 1
   tasks:
