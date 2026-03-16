@@ -1,5 +1,5 @@
 - name: Update all Virtual Machines
-  hosts: repo_*
+  hosts: repo_*:!role_vm_template
   become: true
   serial: 25%
   tasks:
