@@ -1,7 +1,7 @@
 - name: Update all Virtual Machines
   hosts: repo_*:!role_vm_template
   become: true
-  serial: 25%
+  serial: 1
   tasks:
     - name: VM Update Block
       block:
