@@ -10,7 +10,6 @@
   tasks:
     - name: VM Update Block
       block:
-
         - name: Update apt cache and upgrade packages (safe)
           apt:
             update_cache: yes
