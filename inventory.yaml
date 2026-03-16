@@ -15,6 +15,8 @@ keyed_groups:
     key: custom_fields.environment
   - prefix: role
     key: device_roles
+  - prefix: os
+    key: custom_fields.os
 
 groups:
   virtual_machines: "vms"
