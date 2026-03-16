@@ -16,7 +16,7 @@ keyed_groups:
   - prefix: role
     key: device_roles
   - prefix: os
-    key: custom_fields.os
+    key: custom_fields.osa
 
 groups:
   virtual_machines: "vms"
