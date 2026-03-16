@@ -6,11 +6,10 @@
     - name: VM Update Block
       block:
 
-        - name: Update apt cache and upgrade packages
+        - name: Update apt cache and upgrade packages (safe)
           apt:
-            upgrade: dist
             update_cache: yes
-            autoremove: yes
+            upgrade: yes
           register: apt_res
           until: apt_res is success
           retries: 5
